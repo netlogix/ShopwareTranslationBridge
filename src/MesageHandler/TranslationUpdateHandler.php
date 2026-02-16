@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Netlogix\ShopwareTranslationBridge\MesageHandler;
 
@@ -18,8 +18,6 @@ readonly class TranslationUpdateHandler
 
     public function __invoke(TranslationUpdateMessage $message): void
     {
-        foreach ($message->salesChannelIds as $salesChannelId) {
-            $this->salesChannelTranslationRefresher->refresh($salesChannelId);
-        }
+        $this->salesChannelTranslationRefresher->refresh(...$message->salesChannelIds);
     }
 }
