@@ -12,6 +12,10 @@ interface TranslationProviderResolverInterface
 
     public function getDefaultProvider(): ProviderInterface;
 
+    public function hasSalesChannelProvider(string $salesChannelId): bool;
+
+    public function getSalesChannelProvider(string $salesChannelId): ProviderInterface;
+
     public function hasProvider(string $salesChannelId): bool;
 
     public function getProvider(string $salesChannelId): ProviderInterface;

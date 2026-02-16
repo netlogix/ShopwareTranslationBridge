@@ -42,7 +42,7 @@ class UpdateTranslationController extends AbstractController
 
         # If there is no default provider we only have to update the salesChannels which have translation provider
         if (!$this->translationProviderResolver->hasDefaultProvider()) {
-            $salesChannelIds = array_filter($salesChannelIds, $this->translationProviderResolver->hasProvider(...));
+            $salesChannelIds = array_filter($salesChannelIds, $this->translationProviderResolver->hasSalesChannelProvider(...));
         }
 
         if ($salesChannelIds === []) {

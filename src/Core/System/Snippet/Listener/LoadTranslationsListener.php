@@ -66,16 +66,11 @@ class LoadTranslationsListener
 
     private function applyProviderTranslations(StorefrontSnippetsExtension $extension): bool
     {
-        $provider = match (true) {
-            $this->providerResolver->hasProvider($extension->salesChannelId) =>
-            $this->providerResolver->getProvider($extension->salesChannelId),
-            $this->providerResolver->hasDefaultProvider() => $this->providerResolver->getDefaultProvider(),
-            default => null
-        };
-
-        if ($provider == null) {
+        if (!$this->providerResolver->hasProvider($extension->salesChannelId)) {
             return false;
         }
+
+        $provider = $this->providerResolver->getProvider($extension->salesChannelId);
 
         $locales = array_unique(array_filter([
             $extension->locale,
