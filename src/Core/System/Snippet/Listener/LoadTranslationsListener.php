@@ -29,14 +29,15 @@ class LoadTranslationsListener
             return;
         }
 
-        $extension->stopPropagation();
 
         // Force usage of translation files
         if ($this->respectTranslationFiles) {
             $this->respectTranslationFiles($extension);
         }
 
-        $this->applyProviderTranslations($extension);
+        if ($this->applyProviderTranslations($extension)) {
+            $extension->stopPropagation();
+        }
     }
 
     public static function skip(callable $callback): void
@@ -63,7 +64,7 @@ class LoadTranslationsListener
         }
     }
 
-    private function applyProviderTranslations(StorefrontSnippetsExtension $extension): void
+    private function applyProviderTranslations(StorefrontSnippetsExtension $extension): bool
     {
         $provider = match (true) {
             $this->providerResolver->hasProvider($extension->salesChannelId) =>
@@ -73,7 +74,7 @@ class LoadTranslationsListener
         };
 
         if ($provider == null) {
-            return;
+            return false;
         }
 
         $locales = array_unique(array_filter([
@@ -95,5 +96,7 @@ class LoadTranslationsListener
                 $extension->result[$key] = $fallbackCatalogue->get($key, self::TRANSLATION_DOMAIN);
             }
         }
+
+        return true;
     }
 }
