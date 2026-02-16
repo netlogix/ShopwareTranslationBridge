@@ -1,0 +1,56 @@
+{
+  "name": "netlogix/shopware-translation-bridge",
+  "description": "Load storefront translations from symfony/translation provider",
+  "license": "MIT",
+  "type": "shopware-platform-plugin",
+  "version": "v1.1.0",
+  "require": {
+    "php": ">8.3",
+    "shopware/storefront": ">=6.7.1.0",
+    "symfony/translation": ">7.0.0"
+  },
+  "require-dev": {
+    "carthage-software/mago": "*",
+    "ergebnis/composer-normalize": "*",
+    "frosh/shopware-rector": "*",
+    "phpunit/phpunit": "^13.0.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Netlogix\\ShopwareTranslationBridge\\": "src/"
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "carthage-software/mago": true,
+      "ergebnis/composer-normalize": true,
+      "symfony/runtime": false
+    }
+  },
+  "extra": {
+    "label": {
+      "de-DE": "Translation Bridge",
+      "en-GB": "Translation Bridge"
+    },
+    "shopware-plugin-class": "Netlogix\\ShopwareTranslationBridge\\ShopwareTranslationBridge"
+  },
+  "scripts": {
+    "apply-coding-standard": [
+      "@composer:normalize:fix",
+      "@rector:fix",
+      "@format:fix"
+    ],
+    "composer:normalize": "@composer normalize --no-check-lock --dry-run",
+    "composer:normalize:fix": "@composer normalize --no-check-lock",
+    "format": "mago fmt --dry-run",
+    "format:fix": "mago fmt",
+    "lint": "mago lint",
+    "rector": "rector process --dry-run",
+    "rector:fix": "rector process",
+    "test": [
+      "@test:unit"
+    ],
+    "test:coverage": "XDEBUG_MODE=coverage phpunit --testdox --coverage-html .coverage",
+    "test:unit": "phpunit --testdox --testsuite unit"
+  }
+}
