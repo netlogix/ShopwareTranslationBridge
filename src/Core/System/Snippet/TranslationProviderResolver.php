@@ -1,9 +1,10 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace Netlogix\ShopwareTranslationBridge\Core\System\Snippet;
 
+use InvalidArgumentException;
 use RuntimeException;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -13,7 +14,7 @@ use Symfony\Contracts\Service\ResetInterface;
 
 class TranslationProviderResolver implements TranslationProviderResolverInterface, ResetInterface
 {
-    private array $providers;
+    private array $providers = [];
 
     function __construct(
         #[Autowire(service: 'translation.provider_collection')]
@@ -42,7 +43,7 @@ class TranslationProviderResolver implements TranslationProviderResolverInterfac
     public function hasSalesChannelProvider(string $salesChannelId): bool
     {
         if (!Uuid::isValid($salesChannelId)) {
-            throw new \InvalidArgumentException(\sprintf('Provider "%s" is not a valid UUID.', $salesChannelId));
+            throw new InvalidArgumentException(\sprintf('Provider "%s" is not a valid UUID.', $salesChannelId));
         }
 
         $providerName = $this->providerMap[$salesChannelId] ?? null;
@@ -52,7 +53,7 @@ class TranslationProviderResolver implements TranslationProviderResolverInterfac
 
     public function getSalesChannelProvider(string $salesChannelId): ProviderInterface
     {
-        if (isset($this->providers[$salesChannelId])) {
+        if (array_key_exists($salesChannelId, $this->providers)) {
             return $this->providers[$salesChannelId];
         }
 
@@ -61,7 +62,7 @@ class TranslationProviderResolver implements TranslationProviderResolverInterfac
         }
 
         $providerName = $this->providerMap[$salesChannelId];
-        assert(is_string($providerName));
+        assert(is_string($providerName), 'Provider map value must be string');
 
         return $this->providers[$salesChannelId] = $this->providerCollection->get($providerName);
     }
