@@ -13,13 +13,13 @@ composer req netlogix/shopware-translation-bridge
 | option                    | type           | default | info                                                                                               |
 |---------------------------|----------------|---------|----------------------------------------------------------------------------------------------------|
 | default_provider          | `null\|string` | `null`  | Service name from `framework.translator.providers`. If `null` there is no fallback provider.       |
-| respect_translation_files | `bool`         | `true`  | should it overlay the snippet files with the translation files `framework.translator.default_path` |        
+| respect_translation_files | `bool`         | `true`  | should it overlay the snippet files with the translation files `framework.translator.default_path` |
 | sales_channel_providers   | `array`        | `[]`    | SalesChannel spesific providers. Like `default_provider` but individial for every salesChannel     |
 
 ### Example config
 
 ```yaml
-nlx_storefront_translation:
+shopware_translation_bridge:
   default_provider: 'providerServiceName'
   respect_translation_files: true
   sales_channel_providers:
@@ -27,7 +27,7 @@ nlx_storefront_translation:
       provider: 'providerServiceName'
     sales_channel_providers:
       2b919afec10730f413cb5682bbed09fd:
-        provider: 'fooPprovider'
+        provider: 'fooProvider'
     e1582cd277454e988b8de2b878effc94:
       provider: 'barProvider'
 ```
