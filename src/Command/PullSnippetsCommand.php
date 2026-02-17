@@ -150,8 +150,7 @@ class PullSnippetsCommand extends Command
      */
     private function getAllLocales(): array
     {
-        $criteria = (new Criteria())
-            ->addAssociation('locale');
+        $criteria = new Criteria()->addAssociation('locale');
         $result = $this->languageRepository->search($criteria, Context::createCLIContext());
         $languages = $result->getEntities();
         assert($languages instanceof LanguageCollection);
@@ -164,7 +163,7 @@ class PullSnippetsCommand extends Command
      */
     private function getLocalesForSalesChannel(string $salesChannelId): array
     {
-        $criteria = (new Criteria([$salesChannelId]))->addAssociation('languages.locale');
+        $criteria = new Criteria([$salesChannelId])->addAssociation('languages.locale');
         $salesChannel = $this->salesChannelRepository->search($criteria, Context::createCLIContext())->get(
             $salesChannelId
         );

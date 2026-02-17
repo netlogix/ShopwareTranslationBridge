@@ -4,7 +4,6 @@ declare(strict_types = 1);
 
 namespace Netlogix\ShopwareTranslationBridge\Core\System;
 
-
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -46,6 +45,6 @@ readonly class RelevantLocaleResolver implements RelevantLocaleResolverInterface
             $languages->merge($salesChannelLanguages);
         }
 
-        return array_filter($languages->map(fn (LanguageEntity $language) => $language->getLocale()?->getCode()));
+        return array_filter($languages->map(fn(LanguageEntity $language) => $language->getLocale()?->getCode()));
     }
 }

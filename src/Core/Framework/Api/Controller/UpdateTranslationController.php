@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace Netlogix\ShopwareTranslationBridge\Core\Framework\Api\Controller;
 
@@ -40,9 +40,12 @@ class UpdateTranslationController extends AbstractController
             ->searchIds(new Criteria(), Context::createCLIContext())
             ->getIds();
 
-        # If there is no default provider we only have to update the salesChannels which have translation provider
+        // If there is no default provider we only have to update the salesChannels which have translation provider
         if (!$this->translationProviderResolver->hasDefaultProvider()) {
-            $salesChannelIds = array_filter($salesChannelIds, $this->translationProviderResolver->hasSalesChannelProvider(...));
+            $salesChannelIds = array_filter(
+                $salesChannelIds,
+                $this->translationProviderResolver->hasSalesChannelProvider(...)
+            );
         }
 
         if ($salesChannelIds === []) {

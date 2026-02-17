@@ -1,9 +1,10 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace Netlogix\ShopwareTranslationBridge\Message;
 
+use InvalidArgumentException;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\Messenger\Attribute\AsMessage;
 
@@ -20,9 +21,7 @@ readonly class TranslationUpdateMessage
     ) {
         foreach ($salesChannelIds as $salesChannelId) {
             if (!Uuid::isValid($salesChannelId)) {
-                throw new \InvalidArgumentException(
-                    sprintf('SalesChannelId "%s" is not a valid UUID', $salesChannelId)
-                );
+                throw new InvalidArgumentException(sprintf('SalesChannelId "%s" is not a valid UUID', $salesChannelId));
             }
         }
 

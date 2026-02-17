@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace Netlogix\ShopwareTranslationBridge\Core\System\Snippet\Listener;
 
@@ -28,7 +28,6 @@ class LoadTranslationsListener
         if (self::$skip) {
             return;
         }
-
 
         // Force usage of translation files
         if ($this->respectTranslationFiles) {
@@ -80,8 +79,9 @@ class LoadTranslationsListener
         $translationBag = $provider->read([self::TRANSLATION_DOMAIN], $locales);
 
         $catalogue = $translationBag->getCatalogue($extension->locale);
-        $fallbackCatalogue = is_string($extension->fallbackLocale) ?
-            $translationBag->getCatalogue($extension->fallbackLocale) : null;
+        $fallbackCatalogue = is_string($extension->fallbackLocale)
+            ? $translationBag->getCatalogue($extension->fallbackLocale)
+            : null;
 
         foreach ($extension->result as $key => $value) {
             if ($catalogue->has($key, self::TRANSLATION_DOMAIN)) {

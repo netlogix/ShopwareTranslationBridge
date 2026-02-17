@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace Netlogix\ShopwareTranslationBridge\Core\System\Snippet;
 
@@ -20,7 +20,7 @@ readonly class SalesChannelTranslationRefresher implements SalesChannelTranslati
         private TranslationCacheInvalidationInterface $translationCacheInvalidation,
         private EntityRepository $salesChannelDomainRepository,
         #[Autowire(service: Translator::class)]
-        private AbstractTranslator $translator,
+        private AbstractTranslator $translator
     ) {
     }
 
@@ -34,9 +34,9 @@ readonly class SalesChannelTranslationRefresher implements SalesChannelTranslati
         $criteria->addFilter(new EqualsAnyFilter('salesChannelId', $salesChannelIds));
         $criteria->addAssociation('language.locale');
         try {
-            $this->salesChannelDomainRepository
-                ->search($criteria, Context::createCLIContext())
-                ->map($this->warmUpTranslation(...));
+            $this->salesChannelDomainRepository->search($criteria, Context::createCLIContext())->map(
+                $this->warmUpTranslation(...)
+            );
         } finally {
             $this->translator->resetInjection();
         }

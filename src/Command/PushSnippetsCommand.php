@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace Netlogix\ShopwareTranslationBridge\Command;
 
@@ -36,7 +36,7 @@ class PushSnippetsCommand extends Command
         #[Autowire(service: Translator::class)]
         private readonly AbstractTranslator $translator,
         private readonly TranslationProviderResolverInterface $translationProviderResolver,
-        private readonly RelevantLocaleResolverInterface $relevantLocaleResolver,
+        private readonly RelevantLocaleResolverInterface $relevantLocaleResolver
     ) {
         parent::__construct();
     }
@@ -119,6 +119,7 @@ class PushSnippetsCommand extends Command
 
                 return null;
             }
+
             return $locales;
         }
 
@@ -161,13 +162,12 @@ class PushSnippetsCommand extends Command
     ): void {
         if (!$deleteMissing && $force) {
             $provider->write($localTranslations);
-            $io->success(
-                sprintf(
-                    'All local translations have been sent to "%s" (for "%s" locale(s)).',
-                    $this->getProviderName($provider),
-                    implode(', ', $locales)
-                )
-            );
+            $io->success(sprintf(
+                'All local translations have been sent to "%s" (for "%s" locale(s)).',
+                $this->getProviderName($provider),
+                implode(', ', $locales)
+            ));
+
             return;
         }
 
@@ -175,13 +175,11 @@ class PushSnippetsCommand extends Command
 
         if ($deleteMissing) {
             $provider->delete($providerTranslations->diff($localTranslations));
-            $io->success(
-                sprintf(
-                    'Missing translations on "%s" have been deleted (for "%s" locale(s)).',
-                    $this->getProviderName($provider),
-                    implode(', ', $locales)
-                )
-            );
+            $io->success(sprintf(
+                'Missing translations on "%s" have been deleted (for "%s" locale(s)).',
+                $this->getProviderName($provider),
+                implode(', ', $locales)
+            ));
 
             $providerTranslations = $provider->read(['messages'], $locales);
         }
@@ -193,14 +191,12 @@ class PushSnippetsCommand extends Command
 
         $provider->write($translationsToWrite);
 
-        $io->success(
-            sprintf(
-                '%s local translations have been sent to "%s" (for "%s" locale(s)).',
-                $force ? 'All' : 'New',
-                $this->getProviderName($provider),
-                implode(', ', $locales)
-            )
-        );
+        $io->success(sprintf(
+            '%s local translations have been sent to "%s" (for "%s" locale(s)).',
+            $force ? 'All' : 'New',
+            $this->getProviderName($provider),
+            implode(', ', $locales)
+        ));
     }
 
     /**
