@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Netlogix\ShopwareTranslationBridge\Command;
 
 use Netlogix\ShopwareTranslationBridge\Core\System\RelevantLocaleResolverInterface;
-use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\LoadTranslationsListener;
+use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\Listener\LoadTranslationsListener;
 use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\TranslationProviderResolverInterface;
 use Override;
 use Shopware\Core\Framework\Adapter\Translation\AbstractTranslator;
@@ -22,6 +22,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Translation\MessageCatalogue;
+use Symfony\Component\Translation\Provider\ProviderInterface;
 use Symfony\Component\Translation\Provider\TranslationProviderCollection;
 use Symfony\Component\Translation\TranslatorBag;
 
@@ -44,16 +45,8 @@ class PushSnippetsCommand extends Command
     public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void
     {
         if ($input->mustSuggestArgumentValuesFor('provider')) {
-            $suggestions->suggestValues($this->getProviderKeys());
+            $suggestions->suggestValues($this->providers->keys());
         }
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function getProviderKeys(): array
-    {
-        return $this->providers->keys();
     }
 
     protected function configure(): void
@@ -89,55 +82,103 @@ class PushSnippetsCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $salesChannelIds = $input->getArgument('salesChannelId');
 
-        assert(is_array($salesChannelIds));
-        $updateDefaultProvider = $salesChannelIds === [] || key_exists('default', $salesChannelIds);
-
-        // @todo: ...
-
-        /** @var string[] $locales */
-        $locales = $input->getOption('locales');
-        assert(is_array($locales));
-        if ($locales === []) {
-            $locales = $this->relevantLocaleResolver->getAll();
-            $io->info(sprintf('The following locales are going to be pushed: %s', implode(', ', $locales)));
-        } else {
-            $missingLocales = array_diff($locales, $this->relevantLocaleResolver->getAll());
-            if ($missingLocales !== []) {
-                $io->error(sprintf('The following locales are not enabled: %s', implode(', ', $missingLocales)));
-
-                return Command::FAILURE;
-            }
+        $locales = $this->resolveLocales($input, $io);
+        if ($locales === null) {
+            return Command::FAILURE;
         }
 
         $force = $input->getOption('force');
         assert(is_bool($force));
         $deleteMissing = $input->getOption('delete-missing');
-        $localTranslations = $this->getTranslations($locales);
+        assert(is_bool($deleteMissing));
 
+        $localTranslations = $this->getTranslations($locales);
+        $providers = $this->resolveProviders($input);
+
+        foreach ($providers as $provider) {
+            $this->processProvider($provider, $localTranslations, $locales, $force, $deleteMissing, $io);
+        }
+
+        return Command::SUCCESS;
+    }
+
+    /**
+     * @return list<string>|null
+     */
+    private function resolveLocales(InputInterface $input, SymfonyStyle $io): ?array
+    {
+        /** @var string[] $locales */
+        $locales = $input->getOption('locales');
+        assert(is_array($locales));
+
+        if ($locales !== []) {
+            $missingLocales = array_diff($locales, $this->relevantLocaleResolver->getAll());
+            if ($missingLocales !== []) {
+                $io->error(sprintf('The following locales are not enabled: %s', implode(', ', $missingLocales)));
+
+                return null;
+            }
+            return $locales;
+        }
+
+        $locales = $this->relevantLocaleResolver->getAll();
+        $io->info(sprintf('The following locales are going to be pushed: %s', implode(', ', $locales)));
+
+        return $locales;
+    }
+
+    /**
+     * @return list<ProviderInterface>
+     */
+    private function resolveProviders(InputInterface $input): array
+    {
+        $salesChannelIds = $input->getArgument('salesChannelId');
+        assert(is_array($salesChannelIds));
+
+        if ($salesChannelIds === [] || in_array('default', $salesChannelIds, true)) {
+            return [$this->translationProviderResolver->getDefaultProvider()];
+        }
+
+        $providers = [];
+        foreach ($salesChannelIds as $salesChannelId) {
+            $providers[] = $this->translationProviderResolver->getSalesChannelProvider($salesChannelId);
+        }
+
+        return $providers;
+    }
+
+    /**
+     * @param string[] $locales
+     */
+    private function processProvider(
+        ProviderInterface $provider,
+        TranslatorBag $localTranslations,
+        array $locales,
+        bool $force,
+        bool $deleteMissing,
+        SymfonyStyle $io
+    ): void {
         if (!$deleteMissing && $force) {
             $provider->write($localTranslations);
             $io->success(
-                \sprintf(
-                    'All local translations has been sent to "%s" (for "%s" locale(s)).',
-                    parse_url((string) $provider, \PHP_URL_SCHEME),
+                sprintf(
+                    'All local translations have been sent to "%s" (for "%s" locale(s)).',
+                    $this->getProviderName($provider),
                     implode(', ', $locales)
                 )
             );
-
-            return Command::SUCCESS;
+            return;
         }
 
         $providerTranslations = $provider->read(['messages'], $locales);
 
         if ($deleteMissing) {
             $provider->delete($providerTranslations->diff($localTranslations));
-
             $io->success(
-                \sprintf(
-                    'Missing translations on "%s" has been deleted (for "%s" locale(s)).',
-                    parse_url((string) $provider, \PHP_URL_SCHEME),
+                sprintf(
+                    'Missing translations on "%s" have been deleted (for "%s" locale(s)).',
+                    $this->getProviderName($provider),
                     implode(', ', $locales)
                 )
             );
@@ -146,7 +187,6 @@ class PushSnippetsCommand extends Command
         }
 
         $translationsToWrite = $localTranslations->diff($providerTranslations);
-
         if ($force) {
             $translationsToWrite->addBag($localTranslations->intersect($providerTranslations));
         }
@@ -154,15 +194,13 @@ class PushSnippetsCommand extends Command
         $provider->write($translationsToWrite);
 
         $io->success(
-            \sprintf(
-                '%s local translations has been sent to "%s" (for "%s" locale(s)).',
+            sprintf(
+                '%s local translations have been sent to "%s" (for "%s" locale(s)).',
                 $force ? 'All' : 'New',
-                parse_url((string) $provider, \PHP_URL_SCHEME),
+                $this->getProviderName($provider),
                 implode(', ', $locales)
             )
         );
-
-        return Command::SUCCESS;
     }
 
     /**
@@ -183,5 +221,10 @@ class PushSnippetsCommand extends Command
         });
 
         return $translationBag;
+    }
+
+    private function getProviderName(ProviderInterface $provider): string
+    {
+        return parse_url((string) $provider, \PHP_URL_SCHEME) ?: 'unknown';
     }
 }
