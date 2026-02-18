@@ -96,11 +96,6 @@ This plugin provides an API endpoint to trigger a translation update for specifi
     }
     ```
 
-### Asynchronous Processing
+## Asynchronous Processing
 
 When the API endpoint is called, a message is dispatched to the Shopware message queue for each specified sales channel. A message handler then processes the queue and updates the translations for each sales channel asynchronously in the background.
-
-Make sure your message queue workers are running to process these updates:
-```bash
-bin/console messenger:consume
-```
