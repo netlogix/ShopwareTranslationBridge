@@ -19,7 +19,7 @@ The plugin uses the DSN from the `ShopwareTranslationBridge.config.providerDsn` 
 |---------------------------|----------------|---------|----------------------------------------------------------------------------------------------------|
 | default_provider          | `null\|string` | `null`  | Service name from `framework.translator.providers`. If `null` there is no fallback provider.       |
 | respect_translation_files | `bool`         | `true`  | should it overlay the snippet files with the translation files `framework.translator.default_path` |
-| sales_channel_providers   | `array`        | `[]`    | SalesChannel spesific providers. Like `default_provider` but individial for every salesChannel     |
+| sales_channel_providers   | `array`        | `[]`    | SalesChannel specific providers. Like `default_provider` but individiual for every salesChannel    |
 
 ### Example Configuration
 
