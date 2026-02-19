@@ -20,6 +20,11 @@
       "Netlogix\\ShopwareTranslationBridge\\": "src/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "Netlogix\\ShopwareTranslationBridge\\Tests\\": "tests/"
+    }
+  },
   "config": {
     "allow-plugins": {
       "carthage-software/mago": true,
