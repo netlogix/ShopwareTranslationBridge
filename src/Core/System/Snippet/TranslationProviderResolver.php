@@ -86,6 +86,6 @@ class TranslationProviderResolver implements TranslationProviderResolverInterfac
 
     public function reset(): void
     {
-        unset($this->providerss);
+        unset($this->providers);
     }
 }
