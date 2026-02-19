@@ -43,10 +43,9 @@ final class PullSnippetsCommandTest extends TestCase
             $languageRepository,
             $salesChannelRepository,
             $writer,
-            $this->createParameterBagWithoutDefaultPath(),
             $this->createProjectDir(),
             null,
-            []
+            [],
         );
 
         $commandTester = new CommandTester($command);
@@ -93,7 +92,6 @@ final class PullSnippetsCommandTest extends TestCase
             $languageRepository,
             $salesChannelRepository,
             $writer,
-            $this->createParameterBagWithoutDefaultPath(),
             $this->createProjectDir(),
             'default-provider',
             []
@@ -128,7 +126,6 @@ final class PullSnippetsCommandTest extends TestCase
             $languageRepository,
             $salesChannelRepository,
             $writer,
-            $this->createParameterBagWithoutDefaultPath(),
             $this->createProjectDir(),
             null,
             [self::SALES_CHANNEL_ID => 'sales-provider']
@@ -141,23 +138,10 @@ final class PullSnippetsCommandTest extends TestCase
         static::assertStringContainsString('No translations fetched', $commandTester->getDisplay());
     }
 
-    private function createParameterBagWithoutDefaultPath(): ParameterBagInterface
-    {
-        $parameterBag = $this->createMock(ParameterBagInterface::class);
-        $parameterBag
-            ->expects(static::once())
-            ->method('has')
-            ->with('framework.translator.default_path')
-            ->willReturn(false);
-        $parameterBag->expects(static::never())->method('get');
-
-        return $parameterBag;
-    }
-
     private function createProjectDir(): string
     {
         $projectDir = sys_get_temp_dir() . '/shopware-translation-bridge-tests-' . uniqid('', true);
-        mkdir($projectDir, 0o777, true);
+        mkdir($projectDir, recursive: true);
 
         return $projectDir;
     }

@@ -16,7 +16,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Translation\MessageCatalogue;
 use Symfony\Component\Translation\Provider\TranslationProviderCollection;
 use Symfony\Component\Translation\Writer\TranslationWriterInterface;
@@ -34,9 +33,8 @@ class PullSnippetsCommand extends Command
         private readonly EntityRepository $salesChannelRepository,
         #[Autowire(service: 'translation.writer')]
         private readonly TranslationWriterInterface $translationWriter,
-        private readonly ParameterBagInterface $parameterBag,
-        #[Autowire(param: 'kernel.project_dir')]
-        private readonly string $projectDir,
+        #[Autowire(param: 'translator.default_path')]
+        private readonly string $translatorDefaultPath,
         #[Autowire(param: 'nlx_storefront_translation.default_provider')]
         private readonly ?string $defaultProvider,
         #[Autowire(param: 'nlx_storefront_translation.sales_channel_provider')]
@@ -198,11 +196,12 @@ class PullSnippetsCommand extends Command
 
     private function resolveTranslationPath(): string
     {
-        $path = $this->parameterBag->has('framework.translator.default_path')
-            ? (string) $this->parameterBag->get('framework.translator.default_path')
-            : $this->projectDir . '/translations';
+//        dd();
+//        $path = $this->parameterBag->has('framework.translator.default_path')
+//            ? (string) $this->parameterBag->get('framework.translator.default_path')
+//            : $this->projectDir . '/translations';
 
-        return rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . self::STORAGE_DIRECTORY;
+        return rtrim($this->translatorDefaultPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . self::STORAGE_DIRECTORY;
     }
 
     private function ensureDirectoryExists(string $path): void
