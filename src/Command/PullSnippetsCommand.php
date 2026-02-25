@@ -196,11 +196,6 @@ class PullSnippetsCommand extends Command
 
     private function resolveTranslationPath(): string
     {
-//        dd();
-//        $path = $this->parameterBag->has('framework.translator.default_path')
-//            ? (string) $this->parameterBag->get('framework.translator.default_path')
-//            : $this->projectDir . '/translations';
-
         return rtrim($this->translatorDefaultPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . self::STORAGE_DIRECTORY;
     }
 
