@@ -7,7 +7,7 @@ namespace Netlogix\ShopwareTranslationBridge\Tests\Unit\Command;
 use Netlogix\ShopwareTranslationBridge\Command\PushSnippetsCommand;
 use Netlogix\ShopwareTranslationBridge\Core\System\RelevantLocaleResolverInterface;
 use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\TranslationProviderResolverInterface;
-use Netlogix\ShopwareTranslationBridge\Tests\Support\CreatesTranslationBagTrait;
+use Netlogix\ShopwareTranslationBridge\Tests\Support\HelperService;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Adapter\Translation\AbstractTranslator;
@@ -22,9 +22,14 @@ use Symfony\Component\Translation\TranslatorBag;
 #[CoversClass(PushSnippetsCommand::class)]
 final class PushSnippetsCommandTest extends TestCase
 {
-    use CreatesTranslationBagTrait;
-
     private const string SALES_CHANNEL_ID = '2b919afec10730f413cb5682bbed09fd';
+
+    private HelperService $helperService;
+
+    protected function setUp(): void
+    {
+        $this->helperService = new HelperService();
+    }
 
     public function testExecuteFailsWhenInvalidLocalesAreProvided(): void
     {
@@ -85,8 +90,8 @@ final class PushSnippetsCommandTest extends TestCase
 
     public function testExecuteDeletesMissingAndWritesDiffForSalesChannelProvider(): void
     {
-        $firstProviderTranslations = $this->createBag('de-DE', ['obsolete' => 'to-delete']);
-        $secondProviderTranslations = $this->createBag('de-DE', []);
+        $firstProviderTranslations = $this->helperService->createBag('de-DE', ['obsolete' => 'to-delete']);
+        $secondProviderTranslations = $this->helperService->createBag('de-DE', []);
 
         $provider = $this->createMock(ProviderInterface::class);
         $provider

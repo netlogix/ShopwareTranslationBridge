@@ -6,7 +6,7 @@ namespace Netlogix\ShopwareTranslationBridge\Tests\Unit\Core\System\Snippet;
 
 use Netlogix\ShopwareTranslationBridge\Core\Framework\Adapter\Translator\TranslationCacheInvalidationInterface;
 use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\SalesChannelTranslationRefresher;
-use Netlogix\ShopwareTranslationBridge\Tests\Support\CreatesLanguageEntitiesTrait;
+use Netlogix\ShopwareTranslationBridge\Tests\Support\HelperService;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -22,12 +22,17 @@ use Symfony\Component\Translation\MessageCatalogue;
 #[CoversClass(SalesChannelTranslationRefresher::class)]
 final class SalesChannelTranslationRefresherTest extends TestCase
 {
-    use CreatesLanguageEntitiesTrait;
-
     private const string SALES_CHANNEL_ID_1 = '2b919afec10730f413cb5682bbed09fd';
     private const string SALES_CHANNEL_ID_2 = '3b919afec10730f413cb5682bbed09fd';
     private const string LANGUAGE_ID_1 = '4b919afec10730f413cb5682bbed09fd';
     private const string LANGUAGE_ID_2 = '5b919afec10730f413cb5682bbed09fd';
+
+    private HelperService $helperService;
+
+    protected function setUp(): void
+    {
+        $this->helperService = new HelperService();
+    }
 
     public function testRefreshInvalidatesCachesWarmsUpAndResetsInjection(): void
     {
@@ -126,7 +131,7 @@ final class SalesChannelTranslationRefresherTest extends TestCase
         $domain->setUniqueIdentifier(md5($salesChannelId . '-' . $languageId . '-' . $localeCode));
         $domain->setSalesChannelId($salesChannelId);
         $domain->setLanguageId($languageId);
-        $domain->setLanguage($this->createLanguageEntity($localeCode, $languageId));
+        $domain->setLanguage($this->helperService->createLanguageEntity($localeCode, $languageId));
 
         return $domain;
     }

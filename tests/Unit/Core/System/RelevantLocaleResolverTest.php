@@ -5,7 +5,7 @@ declare(strict_types = 1);
 namespace Netlogix\ShopwareTranslationBridge\Tests\Unit\Core\System;
 
 use Netlogix\ShopwareTranslationBridge\Core\System\RelevantLocaleResolver;
-use Netlogix\ShopwareTranslationBridge\Tests\Support\CreatesLanguageEntitiesTrait;
+use Netlogix\ShopwareTranslationBridge\Tests\Support\HelperService;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Context;
@@ -18,7 +18,12 @@ use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 #[CoversClass(RelevantLocaleResolver::class)]
 final class RelevantLocaleResolverTest extends TestCase
 {
-    use CreatesLanguageEntitiesTrait;
+    private HelperService $helperService;
+
+    protected function setUp(): void
+    {
+        $this->helperService = new HelperService();
+    }
 
     public function testGetAllReturnsLocalesFromAllSalesChannels(): void
     {
@@ -53,7 +58,7 @@ final class RelevantLocaleResolverTest extends TestCase
     {
         $salesChannel = new SalesChannelEntity();
         $salesChannel->setUniqueIdentifier($id);
-        $salesChannel->setLanguages($this->createLanguageCollection($localeCodes));
+        $salesChannel->setLanguages($this->helperService->createLanguageCollection($localeCodes));
 
         return $salesChannel;
     }

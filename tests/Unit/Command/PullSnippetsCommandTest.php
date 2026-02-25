@@ -5,8 +5,7 @@ declare(strict_types = 1);
 namespace Netlogix\ShopwareTranslationBridge\Tests\Unit\Command;
 
 use Netlogix\ShopwareTranslationBridge\Command\PullSnippetsCommand;
-use Netlogix\ShopwareTranslationBridge\Tests\Support\CreatesLanguageEntitiesTrait;
-use Netlogix\ShopwareTranslationBridge\Tests\Support\CreatesTranslationBagTrait;
+use Netlogix\ShopwareTranslationBridge\Tests\Support\HelperService;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Context;
@@ -17,7 +16,6 @@ use Shopware\Core\System\SalesChannel\SalesChannelCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\Translation\MessageCatalogue;
 use Symfony\Component\Translation\Provider\ProviderInterface;
 use Symfony\Component\Translation\Provider\TranslationProviderCollection;
@@ -26,10 +24,14 @@ use Symfony\Component\Translation\Writer\TranslationWriterInterface;
 #[CoversClass(PullSnippetsCommand::class)]
 final class PullSnippetsCommandTest extends TestCase
 {
-    use CreatesLanguageEntitiesTrait;
-    use CreatesTranslationBagTrait;
-
     private const string SALES_CHANNEL_ID = '2b919afec10730f413cb5682bbed09fd';
+
+    private HelperService $helperService;
+
+    protected function setUp(): void
+    {
+        $this->helperService = new HelperService();
+    }
 
     public function testExecuteWarnsWhenNoProviderConfigurationExists(): void
     {
@@ -45,7 +47,7 @@ final class PullSnippetsCommandTest extends TestCase
             $writer,
             $this->createProjectDir(),
             null,
-            [],
+            []
         );
 
         $commandTester = new CommandTester($command);
@@ -62,7 +64,7 @@ final class PullSnippetsCommandTest extends TestCase
             ->expects(static::once())
             ->method('read')
             ->with(['messages'], ['de-DE'])
-            ->willReturn($this->createBag('de-DE', ['welcome' => 'Willkommen']));
+            ->willReturn($this->helperService->createBag('de-DE', ['welcome' => 'Willkommen']));
 
         $writer = $this->createMock(TranslationWriterInterface::class);
         $writer
@@ -154,7 +156,7 @@ final class PullSnippetsCommandTest extends TestCase
         return new EntitySearchResult(
             'language',
             count($localeCodes),
-            $this->createLanguageCollection($localeCodes),
+            $this->helperService->createLanguageCollection($localeCodes),
             null,
             new Criteria(),
             Context::createDefaultContext()
