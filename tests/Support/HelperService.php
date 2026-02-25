@@ -9,6 +9,8 @@ use Symfony\Component\Translation\TranslatorBag;
 use Shopware\Core\System\Language\LanguageCollection;
 use Shopware\Core\System\Language\LanguageEntity;
 use Shopware\Core\System\Locale\LocaleEntity;
+use Symfony\Component\Translation\MessageCatalogueInterface;
+use Symfony\Component\Translation\TranslatorBagInterface;
 
 final class HelperService
 {
@@ -47,5 +49,39 @@ final class HelperService
         $locale->setCode($localeCode);
 
         return $locale;
+    }
+
+    /**
+     * @return array<string, array<string, array<string, string>>>
+     */
+    public function translatorBagToArray(TranslatorBagInterface $bag): array
+    {
+        $result = [];
+
+        foreach ($bag->getCatalogues() as $catalogue) {
+            $result[$catalogue->getLocale()] = $this->catalogueToArray($catalogue);
+        }
+
+        ksort($result);
+
+        return $result;
+    }
+
+    /**
+     * @return array<string, array<string, string>>
+     */
+    public function catalogueToArray(MessageCatalogueInterface $catalogue): array
+    {
+        $result = [];
+
+        foreach ($catalogue->getDomains() as $domain) {
+            $messages = $catalogue->all($domain);
+            ksort($messages);
+            $result[$domain] = $messages;
+        }
+
+        ksort($result);
+
+        return $result;
     }
 }

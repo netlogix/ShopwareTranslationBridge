@@ -6,11 +6,11 @@ namespace Netlogix\ShopwareTranslationBridge\Tests\Unit\Core\System\Snippet;
 
 use InvalidArgumentException;
 use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\TranslationProviderResolver;
+use Netlogix\ShopwareTranslationBridge\Tests\Support\Provider\InMemoryTestProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 use RuntimeException;
-use Symfony\Component\Translation\Provider\ProviderInterface;
 use Symfony\Component\Translation\Provider\TranslationProviderCollection;
 
 #[CoversClass(TranslationProviderResolver::class)]
@@ -21,7 +21,7 @@ final class TranslationProviderResolverTest extends TestCase
     public function testHasDefaultProviderReturnsTrueWhenProviderExists(): void
     {
         $providerCollection = new TranslationProviderCollection([
-            'default-provider' => $this->createStub(ProviderInterface::class)
+            'default-provider' => new InMemoryTestProvider('default-provider')
         ]);
 
         $resolver = new TranslationProviderResolver($providerCollection, 'default-provider', []);
@@ -40,8 +40,8 @@ final class TranslationProviderResolverTest extends TestCase
 
     public function testGetProviderPrefersSalesChannelProviderOverDefaultProvider(): void
     {
-        $salesChannelProvider = $this->createStub(ProviderInterface::class);
-        $defaultProvider = $this->createStub(ProviderInterface::class);
+        $salesChannelProvider = new InMemoryTestProvider('sales-channel-provider');
+        $defaultProvider = new InMemoryTestProvider('default-provider');
 
         $resolver = new TranslationProviderResolver(
             new TranslationProviderCollection([
@@ -57,7 +57,7 @@ final class TranslationProviderResolverTest extends TestCase
 
     public function testGetProviderFallsBackToDefaultProvider(): void
     {
-        $defaultProvider = $this->createStub(ProviderInterface::class);
+        $defaultProvider = new InMemoryTestProvider('default-provider');
         $resolver = new TranslationProviderResolver(
             new TranslationProviderCollection(['default-provider' => $defaultProvider]),
             'default-provider',
@@ -78,7 +78,7 @@ final class TranslationProviderResolverTest extends TestCase
 
     public function testResetClearsSalesChannelProviderCache(): void
     {
-        $provider = $this->createStub(ProviderInterface::class);
+        $provider = new InMemoryTestProvider('sales-channel-provider');
         $resolver = new TranslationProviderResolver(
             new TranslationProviderCollection(['sales-channel-provider' => $provider]),
             null,

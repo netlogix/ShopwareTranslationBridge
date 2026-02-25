@@ -8,27 +8,29 @@ use Netlogix\ShopwareTranslationBridge\Command\PushSnippetsCommand;
 use Netlogix\ShopwareTranslationBridge\Core\System\RelevantLocaleResolverInterface;
 use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\TranslationProviderResolverInterface;
 use Netlogix\ShopwareTranslationBridge\Tests\Support\HelperService;
+use Netlogix\ShopwareTranslationBridge\Tests\Support\Provider\InMemoryTestProvider;
+use Netlogix\ShopwareTranslationBridge\Tests\Support\Provider\InMemoryTestProviderFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Adapter\Translation\AbstractTranslator;
 use Shopware\Core\System\Snippet\SnippetService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
-use Symfony\Component\Translation\MessageCatalogue;
-use Symfony\Component\Translation\Provider\ProviderInterface;
 use Symfony\Component\Translation\Provider\TranslationProviderCollection;
-use Symfony\Component\Translation\TranslatorBag;
 
 #[CoversClass(PushSnippetsCommand::class)]
 final class PushSnippetsCommandTest extends TestCase
 {
     private const string SALES_CHANNEL_ID = '2b919afec10730f413cb5682bbed09fd';
+    private const string PUSH_PROVIDER_FIXTURE = __DIR__ . '/../../Fixture/providers/push-provider.json';
 
     private HelperService $helperService;
+    private InMemoryTestProviderFactory $providerFactory;
 
     protected function setUp(): void
     {
         $this->helperService = new HelperService();
+        $this->providerFactory = new InMemoryTestProviderFactory();
     }
 
     public function testExecuteFailsWhenInvalidLocalesAreProvided(): void
@@ -50,31 +52,21 @@ final class PushSnippetsCommandTest extends TestCase
 
     public function testExecutePushesAllTranslationsToDefaultProviderWithForce(): void
     {
-        $provider = $this->createMock(ProviderInterface::class);
-        $provider
-            ->expects(static::once())
-            ->method('write')
-            ->with(static::callback(
-                static fn(TranslatorBag $bag): bool => $bag->getCatalogue('de-DE')->has('greeting', 'messages')
-            ));
-        $provider->method('__toString')->willReturn('mock://default');
+        $providers = $this->providerFactory->createCollectionFromJsonFile(self::PUSH_PROVIDER_FIXTURE);
+        $provider = $providers->get('default-provider');
+        static::assertInstanceOf(InMemoryTestProvider::class, $provider);
 
-        $providerResolver = $this->createMock(TranslationProviderResolverInterface::class);
-        $providerResolver->expects(static::once())->method('getDefaultProvider')->willReturn($provider);
-        $providerResolver->expects(static::never())->method('getSalesChannelProvider');
+        $providerResolver = $this->createStub(TranslationProviderResolverInterface::class);
+        $providerResolver->method('getDefaultProvider')->willReturn($provider);
 
-        $translator = $this->createMock(AbstractTranslator::class);
-        $translator->expects(static::once())->method('getSnippetSetId')->with('de-DE')->willReturn('snippet-set-id');
+        $translator = $this->createStub(AbstractTranslator::class);
+        $translator->method('getSnippetSetId')->willReturn('snippet-set-id');
 
-        $snippetService = $this->createMock(SnippetService::class);
-        $snippetService
-            ->expects(static::once())
-            ->method('getStorefrontSnippets')
-            ->with(static::isInstanceOf(MessageCatalogue::class), 'snippet-set-id')
-            ->willReturn(['greeting' => 'Hallo']);
+        $snippetService = $this->createStub(SnippetService::class);
+        $snippetService->method('getStorefrontSnippets')->willReturn(['greeting' => 'Hallo']);
 
         $command = new PushSnippetsCommand(
-            new TranslationProviderCollection([]),
+            $providers,
             $snippetService,
             $translator,
             $providerResolver,
@@ -86,53 +78,31 @@ final class PushSnippetsCommandTest extends TestCase
 
         static::assertSame(Command::SUCCESS, $status);
         static::assertStringContainsString('All local translations have been sent', $commandTester->getDisplay());
+        static::assertSame(
+            $this->helperService->translatorBagToArray($this->helperService->createBag('de-DE', [
+                'greeting' => 'Hallo'
+            ])),
+            $this->helperService->translatorBagToArray($provider->read(['messages'], ['de-DE']))
+        );
     }
 
     public function testExecuteDeletesMissingAndWritesDiffForSalesChannelProvider(): void
     {
-        $firstProviderTranslations = $this->helperService->createBag('de-DE', ['obsolete' => 'to-delete']);
-        $secondProviderTranslations = $this->helperService->createBag('de-DE', []);
+        $providers = $this->providerFactory->createCollectionFromJsonFile(self::PUSH_PROVIDER_FIXTURE);
+        $provider = $providers->get('sales-provider');
+        static::assertInstanceOf(InMemoryTestProvider::class, $provider);
 
-        $provider = $this->createMock(ProviderInterface::class);
-        $provider
-            ->expects(static::exactly(2))
-            ->method('read')
-            ->with(['messages'], ['de-DE'])
-            ->willReturnOnConsecutiveCalls($firstProviderTranslations, $secondProviderTranslations);
-        $provider
-            ->expects(static::once())
-            ->method('delete')
-            ->with(static::callback(
-                static fn(TranslatorBag $bag): bool => $bag->getCatalogue('de-DE')->has('obsolete', 'messages')
-            ));
-        $provider
-            ->expects(static::once())
-            ->method('write')
-            ->with(static::callback(
-                static fn(TranslatorBag $bag): bool => $bag->getCatalogue('de-DE')->has('greeting', 'messages')
-            ));
-        $provider->method('__toString')->willReturn('mock://sales-channel');
+        $providerResolver = $this->createStub(TranslationProviderResolverInterface::class);
+        $providerResolver->method('getSalesChannelProvider')->willReturn($provider);
 
-        $providerResolver = $this->createMock(TranslationProviderResolverInterface::class);
-        $providerResolver
-            ->expects(static::once())
-            ->method('getSalesChannelProvider')
-            ->with(self::SALES_CHANNEL_ID)
-            ->willReturn($provider);
-        $providerResolver->expects(static::never())->method('getDefaultProvider');
+        $translator = $this->createStub(AbstractTranslator::class);
+        $translator->method('getSnippetSetId')->willReturn('snippet-set-id');
 
-        $translator = $this->createMock(AbstractTranslator::class);
-        $translator->expects(static::once())->method('getSnippetSetId')->with('de-DE')->willReturn('snippet-set-id');
-
-        $snippetService = $this->createMock(SnippetService::class);
-        $snippetService
-            ->expects(static::once())
-            ->method('getStorefrontSnippets')
-            ->with(static::isInstanceOf(MessageCatalogue::class), 'snippet-set-id')
-            ->willReturn(['greeting' => 'Hallo']);
+        $snippetService = $this->createStub(SnippetService::class);
+        $snippetService->method('getStorefrontSnippets')->willReturn(['greeting' => 'Hallo']);
 
         $command = new PushSnippetsCommand(
-            new TranslationProviderCollection([]),
+            $providers,
             $snippetService,
             $translator,
             $providerResolver,
@@ -149,6 +119,104 @@ final class PushSnippetsCommandTest extends TestCase
         static::assertSame(Command::SUCCESS, $status);
         static::assertStringContainsString('Missing translations', $commandTester->getDisplay());
         static::assertStringContainsString('New local translations have been sent', $commandTester->getDisplay());
+        static::assertSame(
+            $this->helperService->translatorBagToArray($this->helperService->createBag('de-DE', [
+                'greeting' => 'Hallo'
+            ])),
+            $this->helperService->translatorBagToArray($provider->read(['messages'], ['de-DE']))
+        );
+    }
+
+    public function testExecutePushesOnlyNewTranslationsWithoutForce(): void
+    {
+        $providers = $this->providerFactory->createCollectionFromJsonFile(self::PUSH_PROVIDER_FIXTURE);
+        $provider = $providers->get('default-provider');
+        static::assertInstanceOf(InMemoryTestProvider::class, $provider);
+
+        // Provider hat bereits eine existierende Übersetzung
+        $provider->write($this->helperService->createBag('de-DE', [
+            'existing' => 'Existing'
+        ]));
+
+        $providerResolver = $this->createStub(TranslationProviderResolverInterface::class);
+        $providerResolver->method('getDefaultProvider')->willReturn($provider);
+
+        $translator = $this->createStub(AbstractTranslator::class);
+        $translator->method('getSnippetSetId')->willReturn('snippet-set-id');
+
+        $snippetService = $this->createStub(SnippetService::class);
+        $snippetService->method('getStorefrontSnippets')->willReturn([
+            'existing' => 'Existing',
+            'new' => 'Neu'
+        ]);
+
+        $command = new PushSnippetsCommand(
+            $providers,
+            $snippetService,
+            $translator,
+            $providerResolver,
+            $this->createLocaleResolver(['de-DE'])
+        );
+
+        $commandTester = new CommandTester($command);
+        $status = $commandTester->execute([]);
+
+        static::assertSame(Command::SUCCESS, $status);
+        static::assertStringContainsString('New local translations have been sent', $commandTester->getDisplay());
+
+        $result = $provider->read(['messages'], ['de-DE']);
+        $resultArray = $this->helperService->translatorBagToArray($result);
+
+        static::assertSame([
+            'de-DE' => [
+                'messages' => [
+                    'existing' => 'Existing',
+                    'new' => 'Neu'
+                ]
+            ]
+        ], $resultArray);
+    }
+
+    public function testExecuteOverridesExistingTranslationsWithForce(): void
+    {
+        $providers = $this->providerFactory->createCollectionFromJsonFile(self::PUSH_PROVIDER_FIXTURE);
+        $provider = $providers->get('default-provider');
+        static::assertInstanceOf(InMemoryTestProvider::class, $provider);
+
+        // Provider hat alte Werte
+        $provider->write($this->helperService->createBag('de-DE', [
+            'greeting' => 'Alter Wert'
+        ]));
+
+        $providerResolver = $this->createStub(TranslationProviderResolverInterface::class);
+        $providerResolver->method('getDefaultProvider')->willReturn($provider);
+
+        $translator = $this->createStub(AbstractTranslator::class);
+        $translator->method('getSnippetSetId')->willReturn('snippet-set-id');
+
+        $snippetService = $this->createStub(SnippetService::class);
+        $snippetService->method('getStorefrontSnippets')->willReturn([
+            'greeting' => 'Neuer Wert'
+        ]);
+
+        $command = new PushSnippetsCommand(
+            $providers,
+            $snippetService,
+            $translator,
+            $providerResolver,
+            $this->createLocaleResolver(['de-DE'])
+        );
+
+        $commandTester = new CommandTester($command);
+        $status = $commandTester->execute(['--force' => true]);
+
+        static::assertSame(Command::SUCCESS, $status);
+        static::assertStringContainsString('All local translations have been sent', $commandTester->getDisplay());
+
+        $result = $provider->read(['messages'], ['de-DE']);
+        $messages = $result->getCatalogue('de-DE')->all('messages');
+
+        static::assertSame('Neuer Wert', $messages['greeting']);
     }
 
     private function createLocaleResolver(array $allLocales): RelevantLocaleResolverInterface
