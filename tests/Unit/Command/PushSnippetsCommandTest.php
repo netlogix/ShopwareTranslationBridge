@@ -22,7 +22,6 @@ use Symfony\Component\Translation\Provider\TranslationProviderCollection;
 final class PushSnippetsCommandTest extends TestCase
 {
     private const string SALES_CHANNEL_ID = '2b919afec10730f413cb5682bbed09fd';
-    private const string PUSH_PROVIDER_FIXTURE = __DIR__ . '/../../Fixture/providers/push-provider.json';
 
     private HelperService $helperService;
     private InMemoryTestProviderFactory $providerFactory;
@@ -52,7 +51,7 @@ final class PushSnippetsCommandTest extends TestCase
 
     public function testExecutePushesAllTranslationsToDefaultProviderWithForce(): void
     {
-        $providers = $this->providerFactory->createCollectionFromJsonFile(self::PUSH_PROVIDER_FIXTURE);
+        $providers = $this->providerFactory->createPushProviderCollection();
         $provider = $providers->get('default-provider');
         static::assertInstanceOf(InMemoryTestProvider::class, $provider);
 
@@ -88,7 +87,7 @@ final class PushSnippetsCommandTest extends TestCase
 
     public function testExecuteDeletesMissingAndWritesDiffForSalesChannelProvider(): void
     {
-        $providers = $this->providerFactory->createCollectionFromJsonFile(self::PUSH_PROVIDER_FIXTURE);
+        $providers = $this->providerFactory->createPushProviderCollection();
         $provider = $providers->get('sales-provider');
         static::assertInstanceOf(InMemoryTestProvider::class, $provider);
 
@@ -129,7 +128,7 @@ final class PushSnippetsCommandTest extends TestCase
 
     public function testExecutePushesOnlyNewTranslationsWithoutForce(): void
     {
-        $providers = $this->providerFactory->createCollectionFromJsonFile(self::PUSH_PROVIDER_FIXTURE);
+        $providers = $this->providerFactory->createPushProviderCollection();
         $provider = $providers->get('default-provider');
         static::assertInstanceOf(InMemoryTestProvider::class, $provider);
 
@@ -179,7 +178,7 @@ final class PushSnippetsCommandTest extends TestCase
 
     public function testExecuteOverridesExistingTranslationsWithForce(): void
     {
-        $providers = $this->providerFactory->createCollectionFromJsonFile(self::PUSH_PROVIDER_FIXTURE);
+        $providers = $this->providerFactory->createPushProviderCollection();
         $provider = $providers->get('default-provider');
         static::assertInstanceOf(InMemoryTestProvider::class, $provider);
 

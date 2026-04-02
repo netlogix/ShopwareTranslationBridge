@@ -26,7 +26,6 @@ use Symfony\Component\Translation\Writer\TranslationWriterInterface;
 final class PullSnippetsCommandTest extends TestCase
 {
     private const string SALES_CHANNEL_ID = '2b919afec10730f413cb5682bbed09fd';
-    private const string PULL_PROVIDER_FIXTURE = __DIR__ . '/../../Fixture/providers/pull-provider.json';
 
     private HelperService $helperService;
     private InMemoryTestProviderFactory $providerFactory;
@@ -63,7 +62,7 @@ final class PullSnippetsCommandTest extends TestCase
 
     public function testExecuteFetchesFromDefaultProviderAndWritesTranslations(): void
     {
-        $providers = $this->providerFactory->createCollectionFromJsonFile(self::PULL_PROVIDER_FIXTURE);
+        $providers = $this->providerFactory->createPullProviderCollection();
         $writer = $this->createRecordingWriter();
 
         $languageRepository = $this->createStub(EntityRepository::class);
@@ -100,7 +99,7 @@ final class PullSnippetsCommandTest extends TestCase
 
     public function testExecuteSkipsSalesChannelProviderWhenNoLocalesWereFound(): void
     {
-        $providers = $this->providerFactory->createCollectionFromJsonFile(self::PULL_PROVIDER_FIXTURE);
+        $providers = $this->providerFactory->createPullProviderCollection();
 
         $languageRepository = $this->createStub(EntityRepository::class);
         $salesChannelRepository = $this->createStub(EntityRepository::class);
@@ -150,7 +149,7 @@ final class PullSnippetsCommandTest extends TestCase
 
     public function testExecuteFetchesFromSalesChannelProviderAndWritesTranslations(): void
     {
-        $providers = $this->providerFactory->createCollectionFromJsonFile(self::PULL_PROVIDER_FIXTURE);
+        $providers = $this->providerFactory->createPullProviderCollection();
         $writer = $this->createRecordingWriter();
 
         $languageRepository = $this->createStub(EntityRepository::class);

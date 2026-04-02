@@ -12,12 +12,25 @@ use Symfony\Component\Translation\TranslatorBag;
 
 final class InMemoryTestProviderFactory
 {
+    private const string PULL_PROVIDER_FIXTURE = __DIR__ . '/Fixture/pull-provider.json';
+    private const string PUSH_PROVIDER_FIXTURE = __DIR__ . '/Fixture/push-provider.json';
+
     public function createProvider(string $name, array $config): InMemoryTestProvider
     {
         return new InMemoryTestProvider($name, $this->createTranslatorBag($config));
     }
 
-    public function createCollectionFromJsonFile(string $jsonFile): TranslationProviderCollection
+    public function createPullProviderCollection(): TranslationProviderCollection
+    {
+        return $this->createCollectionFromJsonFile(self::PULL_PROVIDER_FIXTURE);
+    }
+
+    public function createPushProviderCollection(): TranslationProviderCollection
+    {
+        return $this->createCollectionFromJsonFile(self::PUSH_PROVIDER_FIXTURE);
+    }
+
+    private function createCollectionFromJsonFile(string $jsonFile): TranslationProviderCollection
     {
         $config = $this->decodeJsonFile($jsonFile);
         $providers = is_array($config['providers'] ?? null) ? $config['providers'] : [];
