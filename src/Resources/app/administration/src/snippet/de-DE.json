@@ -1,0 +1,16 @@
+{
+  "nlx-storefront-translation": {
+    "nlx-translation-update": {
+      "updateTranslations": "Übersetzungen aktualisieren",
+      "section": {
+        "translationHeadline": "Storefront-Übersetzung",
+        "translationText": "Löscht den Übersetzungs-Cache und führt ein Warm-up durch. Dies wird asynchron über eine Message ausgeführt."
+      },
+      "updateTranslation": {
+        "success": "Übersetzung erfolgreich aktualisiert",
+        "error": "Fehler beim Aktualisieren der Übersetzung",
+        "errorMissingTranslationProvider": "Es konnte kein TranslationProvider gefunden werden."
+      }
+    }
+  }
+}

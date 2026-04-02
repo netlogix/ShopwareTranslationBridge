@@ -1,0 +1,27 @@
+<sw-card-section class="sw-settings-cache__card-translation" divider="top">
+    <sw-container
+            align="center"
+            columns="1fr auto"
+            gap="20px">
+        <div>
+            {% block nlx_translation_update_row_heading %}
+                <p class="sw-settings-cache__card-section-heading">
+                    {{ $tc('nlx-storefront-translation.nlx-translation-update.section.translationHeadline') }}
+                </p>
+            {% endblock %}
+            {% block nlx_translation_update_row_text %}
+                <p>{{ $tc('nlx-storefront-translation.nlx-translation-update.section.translationText') }}</p>
+            {% endblock %}
+        </div>
+
+        <sw-button-process
+                variant="ghost"
+                :is-loading="processes"
+                :process-success="processSuccess"
+                @update:process-success="resetButton"
+                @click="updateTranslation"
+        >
+            {{ $tc('nlx-storefront-translation.nlx-translation-update.updateTranslations') }}
+        </sw-button-process>
+    </sw-container>
+</sw-card-section>

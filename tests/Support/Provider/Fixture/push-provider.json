@@ -1,0 +1,21 @@
+{
+  "providers": {
+    "default-provider": {
+      "catalogues": {
+        "de-DE": {
+          "messages": {}
+        }
+      }
+    },
+    "sales-provider": {
+      "catalogues": {
+        "de-DE": {
+          "messages": {
+            "obsolete": "to-delete"
+          }
+        }
+      }
+    }
+  }
+}
+
