@@ -5,7 +5,7 @@ on:
     branches: [develop]
 
 env:
-  GITHUB_TOKEN: ${{ secrets.GH_AUTOMATION_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   no-manual-version-bump:
@@ -74,12 +74,12 @@ jobs:
           cat > /tmp/comment.md <<'EOF'
             <!-- composer-version-guard -->
             ⚠️ **Bitte die `version` in `composer.json` nicht manuell ändern.**
-          
+
             Releases werden automatisch erstellt (.github/workflows/release.yml).
-            Dieser PR ändert die Eigenschaft `version` – bitte die Änderung zurücknehmen. 
+            Dieser PR ändert die Eigenschaft `version` – bitte die Änderung zurücknehmen.
             Sobald die Version wieder unverändert ist, wird dieser Hinweis automatisch entfernt.
           EOF
-          
+
           if [ -z "${existing_ids}" ]; then
           # Neuen Kommentar erstellen
           gh pr comment "${PR_NUMBER}" --body-file /tmp/comment.md
@@ -98,12 +98,12 @@ jobs:
         run: |
           set -euo pipefail
           MARK="<!-- composer-version-guard -->"
-          
+
           # Alle Kommentare mit unserem Marker einsammeln
           ids=$(gh api --paginate \
             repos/${REPO}/issues/${PR_NUMBER}/comments \
             --jq "[ .[] | select( (.body // \"\") | contains(\"${MARK}\") ) | .id ] | .[]" || true)
-          
+
           if [ -n "${ids}" ]; then
             echo "Removing ${ids}..."
             for id in ${ids}; do
