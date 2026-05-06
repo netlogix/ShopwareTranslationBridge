@@ -1,0 +1,16 @@
+### Shopware
+/src/Resources/app/storefront/dist/
+/src/Resources/app/storefront/node_modules/
+src/Resources/public/administration
+src/Resources/public/storefront
+src/Resources/public/static/css
+src/Resources/public/static/js
+
+### PHPUnit
+/.phpunit.cache
+/.phpunit.result.cache
+/.coverage
+
+### Composer
+/vendor/
+composer.lock

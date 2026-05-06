@@ -1,0 +1,23 @@
+{
+  "providers": {
+    "default-provider": {
+      "catalogues": {
+        "de-DE": {
+          "messages": {
+            "welcome": "Willkommen"
+          }
+        }
+      }
+    },
+    "sales-provider": {
+      "catalogues": {
+        "de-DE": {
+          "messages": {
+            "checkout": "Kasse"
+          }
+        }
+      }
+    }
+  }
+}
+
