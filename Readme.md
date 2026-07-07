@@ -11,31 +11,16 @@ bin/console plugin:install --activate ShopwareTranslationBridge
 
 ## Configuration
 
-The connection to the translation provider is configured via a DSN (Data Source Name). You need to create a configuration file, for example `config/packages/shopware_translation_bridge.yaml`, to set up the providers.
+The Symfony Translation providers themselves (the DSNs) are still configured the usual Symfony way, e.g. in `config/packages/translation.yaml` under `framework.translator.providers`.
 
-The plugin uses the DSN from the `ShopwareTranslationBridge.config.providerDsn` system config key as a default. You can also configure a specific DSN for each sales channel.
+Everything specific to this plugin is configured as regular **Shopware plugin settings** - no extra config file needed. Open Administration > Extensions > My extensions > Translation Bridge > Config:
 
-| option                    | type           | default | info                                                                                               |
-|---------------------------|----------------|---------|----------------------------------------------------------------------------------------------------|
-| default_provider          | `null\|string` | `null`  | Service name from `framework.translator.providers`. If `null` there is no fallback provider.       |
-| respect_translation_files | `bool`         | `true`  | should it overlay the snippet files with the translation files `framework.translator.default_path` |
-| sales_channel_providers   | `array`        | `[]`    | SalesChannel specific providers. Like `default_provider` but individiual for every salesChannel    |
+| field                          | type     | default | info                                                                                                    |
+|---------------------------------|----------|---------|----------------------------------------------------------------------------------------------------------|
+| Default translation provider   | `string` | empty   | Service name from `framework.translator.providers` (e.g. `tolgee`). Empty means no fallback provider.    |
+| Respect local translation files | `bool`   | `true`  | Whether to overlay the snippet files with the translation files from `framework.translator.default_path` |
 
-### Example Configuration
-
-Here is an example of how to configure different providers for different sales channels.
-
-```yaml
-# config/packages/shopware_translation_bridge.yaml
-shopware_translation_bridge:
-  # Define a default provider for all sales channels
-  default_provider: 'providerServiceName'
-  respect_translation_files: true
-  sales_channel_providers:
-    # Assign a specific provider for a sales channel by its ID
-    2b919afec10730f413cb5682bbed09fd:
-      provider: 'providerServiceName'
-```
+Both fields can be overridden per sales channel using the sales channel selector at the top of that config screen - pick a sales channel, set a different "Default translation provider" (or "Respect local translation files"), and save. Leaving a sales channel's field empty falls back to the global default.
 
 ## Commands
 
@@ -61,7 +46,7 @@ bin/console sw:snippets:push [salesChannelId1] [salesChannelId2]
 
 ### Pull Snippets
 
-Pulls all snippets from the configured translation provider and saves them locally inside the translation directory defined by `framework.translator.default_path`. The default provider (if configured) is written to the `messages` translation domain, while every entry of `sales_channel_providers` is persisted to a domain that matches the configured sales channel id.
+Pulls all snippets from the configured translation provider and saves them locally inside the translation directory defined by `framework.translator.default_path`. The default provider (if configured) is written to the `messages` translation domain, while every sales channel with an explicit provider override is persisted to a domain that matches the sales channel id.
 
 ```bash
 bin/console sw:snippets:pull [salesChannelId1]
