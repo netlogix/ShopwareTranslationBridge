@@ -4,12 +4,16 @@ declare(strict_types = 1);
 
 namespace Netlogix\ShopwareTranslationBridge\Command;
 
+use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\TranslationProviderResolverInterface;
+use Netlogix\ShopwareTranslationBridge\ShopwareTranslationBridgeConfig;
 use RuntimeException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\System\Language\LanguageCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
+use Shopware\Core\System\SystemConfig\SystemConfigEntity;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,7 +21,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Translation\MessageCatalogue;
-use Symfony\Component\Translation\Provider\TranslationProviderCollection;
+use Symfony\Component\Translation\Provider\ProviderInterface;
 use Symfony\Component\Translation\Writer\TranslationWriterInterface;
 
 #[AsCommand('sw:snippets:pull')]
@@ -27,18 +31,15 @@ class PullSnippetsCommand extends Command
     private const string STORAGE_DIRECTORY = 'nlx-storefront-translation';
 
     function __construct(
-        #[Autowire(service: 'translation.provider_collection')]
-        private readonly TranslationProviderCollection $providers,
+        private readonly TranslationProviderResolverInterface $translationProviderResolver,
         private readonly EntityRepository $languageRepository,
         private readonly EntityRepository $salesChannelRepository,
+        #[Autowire(service: 'system_config.repository')]
+        private readonly EntityRepository $systemConfigRepository,
         #[Autowire(service: 'translation.writer')]
         private readonly TranslationWriterInterface $translationWriter,
         #[Autowire(param: 'translator.default_path')]
-        private readonly string $translatorDefaultPath,
-        #[Autowire(param: 'nlx_storefront_translation.default_provider')]
-        private readonly ?string $defaultProvider,
-        #[Autowire(param: 'nlx_storefront_translation.sales_channel_provider')]
-        private readonly array $salesChannelProviders
+        private readonly string $translatorDefaultPath
     ) {
         parent::__construct();
     }
@@ -52,9 +53,9 @@ class PullSnippetsCommand extends Command
 
         $domainsFetched = 0;
 
-        if (is_string($this->defaultProvider) && $this->defaultProvider !== '') {
+        if ($this->translationProviderResolver->hasDefaultProvider()) {
             $domainsFetched += $this->fetchTranslations(
-                $this->defaultProvider,
+                $this->translationProviderResolver->getDefaultProvider(),
                 self::REMOTE_DOMAIN,
                 $this->getAllLocales(),
                 $translationPath,
@@ -62,13 +63,13 @@ class PullSnippetsCommand extends Command
             );
         }
 
-        foreach ($this->salesChannelProviders as $salesChannelId => $providerName) {
-            if (!is_string($providerName)) {
+        foreach ($this->getSalesChannelIdsWithProviderOverride() as $salesChannelId) {
+            if (!$this->translationProviderResolver->hasSalesChannelProvider($salesChannelId)) {
                 continue;
             }
 
             $domainsFetched += $this->fetchTranslations(
-                $providerName,
+                $this->translationProviderResolver->getSalesChannelProvider($salesChannelId),
                 $salesChannelId,
                 $this->getLocalesForSalesChannel($salesChannelId),
                 $translationPath,
@@ -93,23 +94,20 @@ class PullSnippetsCommand extends Command
      * @param list<string> $locales
      */
     private function fetchTranslations(
-        string $providerName,
+        ProviderInterface $provider,
         string $targetDomain,
         array $locales,
         string $translationPath,
         SymfonyStyle $io
     ): int {
+        $providerName = $this->describeProvider($provider);
+
         if ($locales === []) {
             $io->note(sprintf('Skipping "%s" because no locales were found.', $targetDomain));
 
             return 0;
         }
 
-        if (!$this->providers->has($providerName)) {
-            throw new RuntimeException(sprintf('Provider "%s" not found.', $providerName));
-        }
-
-        $provider = $this->providers->get($providerName);
         $translationBag = $provider->read([self::REMOTE_DOMAIN], $locales);
 
         $written = 0;
@@ -141,6 +139,30 @@ class PullSnippetsCommand extends Command
         ));
 
         return 1;
+    }
+
+    private function describeProvider(ProviderInterface $provider): string
+    {
+        return parse_url((string) $provider, \PHP_URL_SCHEME) ?: 'unknown';
+    }
+
+    private function getSalesChannelIdsWithProviderOverride(): array
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('configurationKey', ShopwareTranslationBridgeConfig::KEY_DEFAULT_PROVIDER));
+
+        $result = $this->systemConfigRepository->search($criteria, Context::createCLIContext());
+
+        $salesChannelIds = [];
+        foreach ($result->getEntities() as $systemConfig) {
+            assert($systemConfig instanceof SystemConfigEntity);
+            $salesChannelId = $systemConfig->getSalesChannelId();
+            if ($salesChannelId !== null) {
+                $salesChannelIds[$salesChannelId] = true;
+            }
+        }
+
+        return array_keys($salesChannelIds);
     }
 
     /**

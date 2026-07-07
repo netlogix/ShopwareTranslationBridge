@@ -5,8 +5,10 @@ declare(strict_types = 1);
 namespace Netlogix\ShopwareTranslationBridge\Core\System\Snippet;
 
 use InvalidArgumentException;
+use Netlogix\ShopwareTranslationBridge\ShopwareTranslationBridgeConfig;
 use RuntimeException;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Translation\Provider\ProviderInterface;
 use Symfony\Component\Translation\Provider\TranslationProviderCollection;
@@ -19,25 +21,27 @@ class TranslationProviderResolver implements TranslationProviderResolverInterfac
     function __construct(
         #[Autowire(service: 'translation.provider_collection')]
         private readonly TranslationProviderCollection $providerCollection,
-        #[Autowire(param: 'nlx_storefront_translation.default_provider')]
-        private readonly ?string $defaultProvider,
-        #[Autowire(param: 'nlx_storefront_translation.sales_channel_provider')]
-        private readonly array $providerMap
+        private readonly SystemConfigService $systemConfigService
     ) {
     }
 
     public function hasDefaultProvider(): bool
     {
-        return $this->defaultProvider !== null && $this->providerCollection->has($this->defaultProvider);
+        $providerName = $this->resolveDefaultProviderName();
+
+        return $providerName !== null && $this->providerCollection->has($providerName);
     }
 
     public function getDefaultProvider(): ProviderInterface
     {
         if (!$this->hasDefaultProvider()) {
-            throw new RuntimeException(\sprintf('Provider "%s" not found.', $this->defaultProvider));
+            throw new RuntimeException(\sprintf('Provider "%s" not found.', $this->resolveDefaultProviderName() ?? ''));
         }
 
-        return $this->providers['default'] = $this->providerCollection->get($this->defaultProvider);
+        $providerName = $this->resolveDefaultProviderName();
+        assert(is_string($providerName));
+
+        return $this->providers['default'] = $this->providerCollection->get($providerName);
     }
 
     public function hasSalesChannelProvider(string $salesChannelId): bool
@@ -46,7 +50,7 @@ class TranslationProviderResolver implements TranslationProviderResolverInterfac
             throw new InvalidArgumentException(\sprintf('Provider "%s" is not a valid UUID.', $salesChannelId));
         }
 
-        $providerName = $this->providerMap[$salesChannelId] ?? null;
+        $providerName = $this->resolveSalesChannelProviderName($salesChannelId);
 
         return $providerName !== null && $this->providerCollection->has($providerName);
     }
@@ -57,11 +61,11 @@ class TranslationProviderResolver implements TranslationProviderResolverInterfac
             return $this->providers[$salesChannelId];
         }
 
-        if (!$this->hasProvider($salesChannelId)) {
+        if (!$this->hasSalesChannelProvider($salesChannelId)) {
             throw new RuntimeException(\sprintf('No provider for salesChannel "%s" not found.', $salesChannelId));
         }
 
-        $providerName = $this->providerMap[$salesChannelId];
+        $providerName = $this->resolveSalesChannelProviderName($salesChannelId);
         assert(is_string($providerName), 'Provider map value must be string');
 
         return $this->providers[$salesChannelId] = $this->providerCollection->get($providerName);
@@ -87,5 +91,25 @@ class TranslationProviderResolver implements TranslationProviderResolverInterfac
     public function reset(): void
     {
         unset($this->providers);
+    }
+
+    private function resolveDefaultProviderName(): ?string
+    {
+        $providerName = $this->systemConfigService->getString(ShopwareTranslationBridgeConfig::KEY_DEFAULT_PROVIDER);
+
+        return $providerName !== '' ? $providerName : null;
+    }
+
+    private function resolveSalesChannelProviderName(string $salesChannelId): ?string
+    {
+        $config = $this->systemConfigService->getDomain(
+            ShopwareTranslationBridgeConfig::DOMAIN,
+            $salesChannelId,
+            false
+        );
+
+        $providerName = $config[ShopwareTranslationBridgeConfig::KEY_DEFAULT_PROVIDER] ?? null;
+
+        return is_string($providerName) && $providerName !== '' ? $providerName : null;
     }
 }
