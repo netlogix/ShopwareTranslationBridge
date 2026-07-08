@@ -1,14 +1,13 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Netlogix\ShopwareTranslationBridge\Core\System\Snippet;
 
 use InvalidArgumentException;
-use Netlogix\ShopwareTranslationBridge\ShopwareTranslationBridgeConfig;
+use Netlogix\ShopwareTranslationBridge\Resolver\ConfigurationResolver;
 use RuntimeException;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Translation\Provider\ProviderInterface;
 use Symfony\Component\Translation\Provider\TranslationProviderCollection;
@@ -18,10 +17,10 @@ class TranslationProviderResolver implements TranslationProviderResolverInterfac
 {
     private array $providers = [];
 
-    function __construct(
+    public function __construct(
         #[Autowire(service: 'translation.provider_collection')]
         private readonly TranslationProviderCollection $providerCollection,
-        private readonly SystemConfigService $systemConfigService
+        private readonly ConfigurationResolver $configurationResolver
     ) {
     }
 
@@ -95,21 +94,13 @@ class TranslationProviderResolver implements TranslationProviderResolverInterfac
 
     private function resolveDefaultProviderName(): ?string
     {
-        $providerName = $this->systemConfigService->getString(ShopwareTranslationBridgeConfig::KEY_DEFAULT_PROVIDER);
+        $providerName = $this->configurationResolver->getDefaultProviderName();
 
         return $providerName !== '' ? $providerName : null;
     }
 
     private function resolveSalesChannelProviderName(string $salesChannelId): ?string
     {
-        $config = $this->systemConfigService->getDomain(
-            ShopwareTranslationBridgeConfig::DOMAIN,
-            $salesChannelId,
-            false
-        );
-
-        $providerName = $config[ShopwareTranslationBridgeConfig::KEY_DEFAULT_PROVIDER] ?? null;
-
-        return is_string($providerName) && $providerName !== '' ? $providerName : null;
+        return $this->configurationResolver->getSalesChannelProviderOverride($salesChannelId);
     }
 }

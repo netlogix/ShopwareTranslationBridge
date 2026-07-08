@@ -1,13 +1,12 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Netlogix\ShopwareTranslationBridge\Core\System\Snippet\Listener;
 
 use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\TranslationProviderResolverInterface;
-use Netlogix\ShopwareTranslationBridge\ShopwareTranslationBridgeConfig;
+use Netlogix\ShopwareTranslationBridge\Resolver\ConfigurationResolver;
 use Shopware\Core\System\Snippet\Extension\StorefrontSnippetsExtension;
-use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 #[AsEventListener(StorefrontSnippetsExtension::NAME . '.pre')]
@@ -17,9 +16,9 @@ class LoadTranslationsListener
 
     private static bool $skip = false;
 
-    function __construct(
+    public function __construct(
         private readonly TranslationProviderResolverInterface $providerResolver,
-        private readonly SystemConfigService $systemConfigService
+        private readonly ConfigurationResolver $configurationResolver
     ) {
     }
 
@@ -29,10 +28,7 @@ class LoadTranslationsListener
             return;
         }
 
-        $respectTranslationFiles = $this->systemConfigService->getBool(
-            ShopwareTranslationBridgeConfig::KEY_RESPECT_TRANSLATION_FILES,
-            $extension->salesChannelId
-        );
+        $respectTranslationFiles = $this->configurationResolver->respectTranslationFiles($extension->salesChannelId);
 
         // Force usage of translation files
         if ($respectTranslationFiles) {
@@ -47,6 +43,7 @@ class LoadTranslationsListener
     public static function skip(callable $callback): void
     {
         self::$skip = true;
+
         try {
             $callback();
         } finally {
@@ -76,10 +73,7 @@ class LoadTranslationsListener
 
         $provider = $this->providerResolver->getProvider($extension->salesChannelId);
 
-        $locales = array_unique(array_filter([
-            $extension->locale,
-            $extension->fallbackLocale
-        ]));
+        $locales = array_unique(array_filter([$extension->locale, $extension->fallbackLocale]));
 
         $translationBag = $provider->read([self::TRANSLATION_DOMAIN], $locales);
 

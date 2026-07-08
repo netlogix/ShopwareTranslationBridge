@@ -17,4 +17,15 @@ export default class NlxTranslationApiService extends ApiService {
             )
             .then((response) => ApiService.handleResponse(response));
     }
+
+    getProviders() {
+        return this.httpClient
+            .get(
+                `${this.getApiBasePath()}/providers`,
+                {
+                    headers: this.getBasicHeaders(),
+                }
+            )
+            .then((response) => ApiService.handleResponse(response));
+    }
 }

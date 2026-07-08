@@ -1,19 +1,16 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Netlogix\ShopwareTranslationBridge\Command;
 
 use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\TranslationProviderResolverInterface;
-use Netlogix\ShopwareTranslationBridge\ShopwareTranslationBridgeConfig;
 use RuntimeException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\System\Language\LanguageCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
-use Shopware\Core\System\SystemConfig\SystemConfigEntity;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -28,14 +25,13 @@ use Symfony\Component\Translation\Writer\TranslationWriterInterface;
 class PullSnippetsCommand extends Command
 {
     private const string REMOTE_DOMAIN = 'messages';
+
     private const string STORAGE_DIRECTORY = 'nlx-storefront-translation';
 
-    function __construct(
+    public function __construct(
         private readonly TranslationProviderResolverInterface $translationProviderResolver,
         private readonly EntityRepository $languageRepository,
         private readonly EntityRepository $salesChannelRepository,
-        #[Autowire(service: 'system_config.repository')]
-        private readonly EntityRepository $systemConfigRepository,
         #[Autowire(service: 'translation.writer')]
         private readonly TranslationWriterInterface $translationWriter,
         #[Autowire(param: 'translator.default_path')]
@@ -64,10 +60,6 @@ class PullSnippetsCommand extends Command
         }
 
         foreach ($this->getSalesChannelIdsWithProviderOverride() as $salesChannelId) {
-            if (!$this->translationProviderResolver->hasSalesChannelProvider($salesChannelId)) {
-                continue;
-            }
-
             $domainsFetched += $this->fetchTranslations(
                 $this->translationProviderResolver->getSalesChannelProvider($salesChannelId),
                 $salesChannelId,
@@ -100,7 +92,7 @@ class PullSnippetsCommand extends Command
         string $translationPath,
         SymfonyStyle $io
     ): int {
-        $providerName = $this->describeProvider($provider);
+        $providerName = $this->getProviderName($provider);
 
         if ($locales === []) {
             $io->note(sprintf('Skipping "%s" because no locales were found.', $targetDomain));
@@ -121,7 +113,9 @@ class PullSnippetsCommand extends Command
             $newCatalogue = new MessageCatalogue($catalogue->getLocale());
             $newCatalogue->add($messages, $targetDomain);
 
-            $this->translationWriter->write($newCatalogue, 'json', ['path' => $translationPath]);
+            $this->translationWriter->write($newCatalogue, 'json', [
+                'path' => $translationPath,
+            ]);
             ++$written;
         }
 
@@ -141,28 +135,19 @@ class PullSnippetsCommand extends Command
         return 1;
     }
 
-    private function describeProvider(ProviderInterface $provider): string
+    private function getProviderName(ProviderInterface $provider): string
     {
         return parse_url((string) $provider, \PHP_URL_SCHEME) ?: 'unknown';
     }
 
     private function getSalesChannelIdsWithProviderOverride(): array
     {
-        $criteria = new Criteria();
-        $criteria->addFilter(new EqualsFilter('configurationKey', ShopwareTranslationBridgeConfig::KEY_DEFAULT_PROVIDER));
+        $result = $this->salesChannelRepository->searchIds(new Criteria(), Context::createCLIContext());
 
-        $result = $this->systemConfigRepository->search($criteria, Context::createCLIContext());
-
-        $salesChannelIds = [];
-        foreach ($result->getEntities() as $systemConfig) {
-            assert($systemConfig instanceof SystemConfigEntity);
-            $salesChannelId = $systemConfig->getSalesChannelId();
-            if ($salesChannelId !== null) {
-                $salesChannelIds[$salesChannelId] = true;
-            }
-        }
-
-        return array_keys($salesChannelIds);
+        return array_values(array_filter(
+            $result->getIds(),
+            fn (string $salesChannelId): bool => $this->translationProviderResolver->hasSalesChannelProvider($salesChannelId)
+        ));
     }
 
     /**
@@ -170,7 +155,8 @@ class PullSnippetsCommand extends Command
      */
     private function getAllLocales(): array
     {
-        $criteria = new Criteria()->addAssociation('locale');
+        $criteria = new Criteria()
+            ->addAssociation('locale');
         $result = $this->languageRepository->search($criteria, Context::createCLIContext());
         $languages = $result->getEntities();
         assert($languages instanceof LanguageCollection);

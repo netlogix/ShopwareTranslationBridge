@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Netlogix\ShopwareTranslationBridge\MesageHandler;
 
@@ -11,7 +11,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler]
 readonly class TranslationUpdateHandler
 {
-    function __construct(
+    public function __construct(
         private SalesChannelTranslationRefresherInterface $salesChannelTranslationRefresher
     ) {
     }

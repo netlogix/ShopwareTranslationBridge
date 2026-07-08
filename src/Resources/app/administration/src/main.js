@@ -9,6 +9,11 @@ Shopware.Component.register(
     () => import('./module/nlx-translation-update')
 );
 
+Shopware.Component.register(
+    'nlx-translation-provider-select',
+    () => import('./component/nlx-translation-provider-select')
+);
+
 Shopware.Component.override(
     'sw-settings-cache-index',
     () => import('./overrride/module/sw-settings-cache-index')

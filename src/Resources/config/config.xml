@@ -5,20 +5,21 @@
         <title>Translation Bridge</title>
         <title lang="de-DE">Translation Bridge</title>
 
-        <input-field type="text">
+        <component name="nlx-translation-provider-select">
             <name>defaultProvider</name>
             <label>Default translation provider</label>
             <label lang="de-DE">Standard-Übersetzungsanbieter</label>
             <helpText>
-                Name of the configured Symfony Translation provider DSN (e.g. "tolgee"). Select a sales
-                channel above to override the provider for that sales channel only.
+                Symfony Translation provider configured under "framework.translator.providers" in
+                translation.yaml. Select a sales channel above to override the provider for that sales
+                channel only.
             </helpText>
             <helpText lang="de-DE">
-                Name des konfigurierten Symfony-Translation-Provider-DSN (z. B. "tolgee"). Wählen Sie oben
-                einen Verkaufskanal aus, um den Provider nur für diesen Verkaufskanal zu überschreiben.
+                Symfony-Translation-Provider, der unter "framework.translator.providers" in der
+                translation.yaml konfiguriert ist. Wählen Sie oben einen Verkaufskanal aus, um den Provider
+                nur für diesen Verkaufskanal zu überschreiben.
             </helpText>
-            <defaultValue>tolgee</defaultValue>
-        </input-field>
+        </component>
 
         <input-field type="bool">
             <name>respectTranslationFiles</name>

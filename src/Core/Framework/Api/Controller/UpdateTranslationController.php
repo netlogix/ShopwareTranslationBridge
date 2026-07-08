@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Netlogix\ShopwareTranslationBridge\Core\Framework\Api\Controller;
 
@@ -20,13 +20,13 @@ use Symfony\Component\Routing\Attribute\Route;
     name: 'api.action.nlx.translation_update',
     defaults: [
         '_routeScope' => ['api'],
-        '_acl' => ['system:cache:info']
+        '_acl' => ['system:cache:info'],
     ],
     methods: ['POST']
 )]
 class UpdateTranslationController extends AbstractController
 {
-    function __construct(
+    public function __construct(
         private readonly EntityRepository $salesChannelRepository,
         private readonly MessageBusInterface $messageBus,
         private readonly TranslationProviderResolverInterface $translationProviderResolver,
@@ -34,7 +34,7 @@ class UpdateTranslationController extends AbstractController
     ) {
     }
 
-    function __invoke(): JsonApiResponse
+    public function __invoke(): JsonApiResponse
     {
         $salesChannelIds = $this->salesChannelRepository
             ->searchIds(new Criteria(), Context::createCLIContext())
@@ -51,7 +51,7 @@ class UpdateTranslationController extends AbstractController
         if ($salesChannelIds === []) {
             return new JsonApiResponse([
                 'success' => false,
-                'error' => 'errorMissingTranslationProvider'
+                'error' => 'errorMissingTranslationProvider',
             ], Response::HTTP_SERVICE_UNAVAILABLE);
         }
 
@@ -59,6 +59,8 @@ class UpdateTranslationController extends AbstractController
             $this->messageBus->dispatch(new TranslationUpdateMessage(...$chunk));
         }
 
-        return new JsonApiResponse(['success' => true]);
+        return new JsonApiResponse([
+            'success' => true,
+        ]);
     }
 }

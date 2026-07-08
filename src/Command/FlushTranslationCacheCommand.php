@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Netlogix\ShopwareTranslationBridge\Command;
 
@@ -13,7 +13,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand('cache:translation:flush')]
 class FlushTranslationCacheCommand extends Command
 {
-    function __construct(
+    public function __construct(
         private readonly TranslationCacheInvalidationInterface $translationCacheInvalidation
     ) {
         parent::__construct();
