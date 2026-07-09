@@ -39,12 +39,6 @@ class ConfigurationResolver
             self::KEY_DEFAULT_PROVIDER
         );
     }
-
-    /**
-     * Returns the provider name only if it was explicitly configured for this sales channel
-     * (i.e. not inherited from the global default). Returns null if the sales channel has no
-     * override of its own, even if a global default provider is configured.
-     */
     public function getSalesChannelProviderOverride(string $salesChannelId): ?string
     {
         $config = $this->systemConfigService->getDomain(
