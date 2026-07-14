@@ -3,7 +3,7 @@ const {ApiService} = Shopware.Classes;
 export default class NlxTranslationApiService extends ApiService {
     constructor(httpClient, loginService, apiEndpoint = '_action/nlx-translation') {
         super(httpClient, loginService, apiEndpoint);
-        this.name = 'nlxNeosContentApiService';
+        this.name = 'nlxTranslationApiService';
     }
 
     updateTranslation() {

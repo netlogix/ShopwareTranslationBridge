@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Netlogix\ShopwareTranslationBridge\MesageHandler;
+namespace Netlogix\ShopwareTranslationBridge\MessageHandler;
 
 use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\SalesChannelTranslationRefresherInterface;
 use Netlogix\ShopwareTranslationBridge\Message\TranslationUpdateMessage;

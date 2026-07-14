@@ -65,15 +65,14 @@ bin/console sw:snippets:pull [salesChannelId1]
 Flushes the translation cache. This is useful after pulling new translations to make them visible in the storefront.
 
 ```bash
-bin/console sw:cache:flush:translation
+bin/console sw:cache:translation:flush
 ```
 
 ## API Endpoint
 
 This plugin provides an API endpoint to trigger a translation update for specific sales channels. This is useful for integrating with webhooks from translation providers (e.g., when translations are completed).
 
-*   **URL:** `/api/_action/nlx/translation/update`
-*   **Method:** `POST`
+*   **URL:** `/api/_action/nlx-translation/update`
 *   **Body (JSON):**
     ```json
     {

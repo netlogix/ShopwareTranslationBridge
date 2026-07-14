@@ -27,25 +27,17 @@ class ConfigurationResolver
 
     public function respectTranslationFiles(?string $salesChannelId = null): bool
     {
-        return $this->systemConfigService->getBool(
-            self::KEY_RESPECT_TRANSLATION_FILES,
-            $salesChannelId
-        );
+        return $this->systemConfigService->getBool(self::KEY_RESPECT_TRANSLATION_FILES, $salesChannelId);
     }
 
     public function getDefaultProviderName(): string
     {
-        return $this->systemConfigService->getString(
-            self::KEY_DEFAULT_PROVIDER
-        );
+        return $this->systemConfigService->getString(self::KEY_DEFAULT_PROVIDER);
     }
+
     public function getSalesChannelProviderOverride(string $salesChannelId): ?string
     {
-        $config = $this->systemConfigService->getDomain(
-            self::PLUGIN_CONFIG_PREFIX,
-            $salesChannelId,
-            false
-        );
+        $config = $this->systemConfigService->getDomain(self::PLUGIN_CONFIG_PREFIX, $salesChannelId, false);
 
         $providerName = $config[self::KEY_DEFAULT_PROVIDER] ?? null;
 

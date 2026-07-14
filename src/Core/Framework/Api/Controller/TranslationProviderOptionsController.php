@@ -37,6 +37,8 @@ class TranslationProviderOptionsController extends AbstractController
             $this->providers->keys()
         );
 
-        return new JsonApiResponse(['options' => $options]);
+        return new JsonApiResponse([
+            'options' => $options,
+        ]);
     }
 }

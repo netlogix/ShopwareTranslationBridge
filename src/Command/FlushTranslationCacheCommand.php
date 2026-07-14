@@ -10,7 +10,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand('cache:translation:flush')]
+#[AsCommand('sw:cache:translation:flush')]
 class FlushTranslationCacheCommand extends Command
 {
     public function __construct(

@@ -46,7 +46,7 @@ class TranslationProviderResolver implements TranslationProviderResolverInterfac
     public function hasSalesChannelProvider(string $salesChannelId): bool
     {
         if (!Uuid::isValid($salesChannelId)) {
-            throw new InvalidArgumentException(\sprintf('Provider "%s" is not a valid UUID.', $salesChannelId));
+            throw new InvalidArgumentException(\sprintf('SalesChannelId "%s" is not a valid UUID.', $salesChannelId));
         }
 
         $providerName = $this->resolveSalesChannelProviderName($salesChannelId);
@@ -61,7 +61,7 @@ class TranslationProviderResolver implements TranslationProviderResolverInterfac
         }
 
         if (!$this->hasSalesChannelProvider($salesChannelId)) {
-            throw new RuntimeException(\sprintf('No provider for salesChannel "%s" not found.', $salesChannelId));
+            throw new RuntimeException(\sprintf('Provider for salesChannel "%s" not found.', $salesChannelId));
         }
 
         $providerName = $this->resolveSalesChannelProviderName($salesChannelId);
@@ -84,12 +84,12 @@ class TranslationProviderResolver implements TranslationProviderResolverInterfac
             return $this->getDefaultProvider();
         }
 
-        throw new RuntimeException(\sprintf('No provider for salesChannel "%s" not found.', $salesChannelId));
+        throw new RuntimeException(\sprintf('Provider for salesChannel "%s" not found.', $salesChannelId));
     }
 
     public function reset(): void
     {
-        unset($this->providers);
+        $this->providers = [];
     }
 
     private function resolveDefaultProviderName(): ?string

@@ -140,13 +140,18 @@ class PullSnippetsCommand extends Command
         return parse_url((string) $provider, \PHP_URL_SCHEME) ?: 'unknown';
     }
 
+    /**
+     * @return list<string>
+     */
     private function getSalesChannelIdsWithProviderOverride(): array
     {
         $result = $this->salesChannelRepository->searchIds(new Criteria(), Context::createCLIContext());
 
         return array_values(array_filter(
             $result->getIds(),
-            fn (string $salesChannelId): bool => $this->translationProviderResolver->hasSalesChannelProvider($salesChannelId)
+            fn (string $salesChannelId): bool => $this->translationProviderResolver->hasSalesChannelProvider(
+                $salesChannelId
+            )
         ));
     }
 

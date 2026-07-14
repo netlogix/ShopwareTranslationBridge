@@ -1,6 +1,4 @@
-import './module/nlx-translation-update'
-import './overrride/module/sw-settings-cache-index'
-import TranslationApiService from "./service/translationApi.Service";
+import TranslationApiService from './service/translationApi.Service';
 
 const {Application} = Shopware;
 
