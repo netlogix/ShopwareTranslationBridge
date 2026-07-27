@@ -12,7 +12,7 @@ namespace Netlogix\ShopwareTranslationBridge\Resolver;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
-class ConfigurationResolver
+readonly class ConfigurationResolver
 {
     public const string PLUGIN_CONFIG_PREFIX = 'ShopwareTranslationBridge.config';
 
