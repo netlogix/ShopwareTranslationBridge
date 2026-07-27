@@ -40,7 +40,7 @@ class TranslationProviderResolver implements TranslationProviderResolverInterfac
         $providerName = $this->resolveDefaultProviderName();
         assert(is_string($providerName));
 
-        return $this->providers['default'] = $this->providerCollection->get($providerName);
+        return $this->providers['default'] ??= $this->providerCollection->get($this->resolveDefaultProviderName());
     }
 
     public function hasSalesChannelProvider(string $salesChannelId): bool
