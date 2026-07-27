@@ -65,7 +65,7 @@ class TranslationProviderResolver implements TranslationProviderResolverInterfac
         }
 
         $providerName = $this->resolveSalesChannelProviderName($salesChannelId);
-        assert(is_string($providerName), 'Provider map value must be string');
+        assert(is_string($providerName), 'ProviderName value must be string');
 
         return $this->providers[$salesChannelId] = $this->providerCollection->get($providerName);
     }
