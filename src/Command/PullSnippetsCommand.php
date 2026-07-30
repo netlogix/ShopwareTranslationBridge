@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Netlogix\ShopwareTranslationBridge\Command;
 
 use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\TranslationProviderResolverInterface;
-use RuntimeException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -17,6 +16,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Translation\MessageCatalogue;
 use Symfony\Component\Translation\Provider\ProviderInterface;
 use Symfony\Component\Translation\Writer\TranslationWriterInterface;
@@ -214,12 +214,6 @@ class PullSnippetsCommand extends Command
 
     private function ensureDirectoryExists(string $path): void
     {
-        if (is_dir($path)) {
-            return;
-        }
-
-        if (!mkdir($path, 0777, true) && !is_dir($path)) {
-            throw new RuntimeException(sprintf('Unable to create translation directory "%s".', $path));
-        }
+        (new Filesystem())->mkdir($path);
     }
 }
