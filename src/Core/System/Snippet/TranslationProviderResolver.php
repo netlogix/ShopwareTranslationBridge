@@ -11,16 +11,13 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Translation\Provider\ProviderInterface;
 use Symfony\Component\Translation\Provider\TranslationProviderCollection;
-use Symfony\Contracts\Service\ResetInterface;
 
-class TranslationProviderResolver implements TranslationProviderResolverInterface, ResetInterface
+readonly class TranslationProviderResolver implements TranslationProviderResolverInterface
 {
-    private array $providers = [];
-
     public function __construct(
         #[Autowire(service: 'translation.provider_collection')]
-        private readonly TranslationProviderCollection $providerCollection,
-        private readonly ConfigurationResolver $configurationResolver
+        private TranslationProviderCollection $providerCollection,
+        private ConfigurationResolver $configurationResolver
     ) {
     }
 
@@ -33,14 +30,13 @@ class TranslationProviderResolver implements TranslationProviderResolverInterfac
 
     public function getDefaultProvider(): ProviderInterface
     {
-        if (!$this->hasDefaultProvider()) {
-            throw new RuntimeException(\sprintf('Provider "%s" not found.', $this->resolveDefaultProviderName() ?? ''));
+        $providerName = $this->resolveDefaultProviderName();
+
+        if ($providerName === null || !$this->providerCollection->has($providerName)) {
+            throw new RuntimeException(\sprintf('Provider "%s" not found.', $providerName ?? ''));
         }
 
-        $providerName = $this->resolveDefaultProviderName();
-        assert(is_string($providerName));
-
-        return $this->providers['default'] ??= $this->providerCollection->get($this->resolveDefaultProviderName());
+        return $this->providerCollection->get($providerName);
     }
 
     public function hasSalesChannelProvider(string $salesChannelId): bool
@@ -56,18 +52,13 @@ class TranslationProviderResolver implements TranslationProviderResolverInterfac
 
     public function getSalesChannelProvider(string $salesChannelId): ProviderInterface
     {
-        if (array_key_exists($salesChannelId, $this->providers)) {
-            return $this->providers[$salesChannelId];
-        }
+        $providerName = $this->resolveSalesChannelProviderName($salesChannelId);
 
-        if (!$this->hasSalesChannelProvider($salesChannelId)) {
+        if ($providerName === null || !$this->providerCollection->has($providerName)) {
             throw new RuntimeException(\sprintf('Provider for salesChannel "%s" not found.', $salesChannelId));
         }
 
-        $providerName = $this->resolveSalesChannelProviderName($salesChannelId);
-        assert(is_string($providerName), 'ProviderName value must be string');
-
-        return $this->providers[$salesChannelId] = $this->providerCollection->get($providerName);
+        return $this->providerCollection->get($providerName);
     }
 
     public function hasProvider(string $salesChannelId): bool
@@ -85,11 +76,6 @@ class TranslationProviderResolver implements TranslationProviderResolverInterfac
         }
 
         throw new RuntimeException(\sprintf('Provider for salesChannel "%s" not found.', $salesChannelId));
-    }
-
-    public function reset(): void
-    {
-        $this->providers = [];
     }
 
     private function resolveDefaultProviderName(): ?string

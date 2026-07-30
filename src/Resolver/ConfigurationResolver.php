@@ -21,7 +21,7 @@ readonly class ConfigurationResolver
     public const string KEY_RESPECT_TRANSLATION_FILES = self::PLUGIN_CONFIG_PREFIX . '.respectTranslationFiles';
 
     public function __construct(
-        private readonly SystemConfigService $systemConfigService,
+        private SystemConfigService $systemConfigService,
     ) {
     }
 
@@ -37,10 +37,6 @@ readonly class ConfigurationResolver
 
     public function getSalesChannelProviderOverride(string $salesChannelId): ?string
     {
-        $config = $this->systemConfigService->getDomain(self::PLUGIN_CONFIG_PREFIX, $salesChannelId, false);
-
-        $providerName = $config[self::KEY_DEFAULT_PROVIDER] ?? null;
-
-        return is_string($providerName) && $providerName !== '' ? $providerName : null;
+        return $this->systemConfigService->getString(self::KEY_DEFAULT_PROVIDER, $salesChannelId);
     }
 }
