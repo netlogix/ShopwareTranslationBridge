@@ -143,7 +143,7 @@ class PushSnippetsCommand extends Command
 
         $providers = [];
         foreach ($salesChannelIds as $salesChannelId) {
-            $providers[] = $this->translationProviderResolver->getSalesChannelProvider($salesChannelId);
+            $providers[] = $this->translationProviderResolver->getProvider($salesChannelId);
         }
 
         return $providers;
