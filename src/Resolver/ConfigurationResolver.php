@@ -12,7 +12,7 @@ namespace Netlogix\ShopwareTranslationBridge\Resolver;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
-class ConfigurationResolver
+readonly class ConfigurationResolver
 {
     public const string PLUGIN_CONFIG_PREFIX = 'ShopwareTranslationBridge.config';
 
@@ -21,7 +21,7 @@ class ConfigurationResolver
     public const string KEY_RESPECT_TRANSLATION_FILES = self::PLUGIN_CONFIG_PREFIX . '.respectTranslationFiles';
 
     public function __construct(
-        private readonly SystemConfigService $systemConfigService,
+        private SystemConfigService $systemConfigService,
     ) {
     }
 
