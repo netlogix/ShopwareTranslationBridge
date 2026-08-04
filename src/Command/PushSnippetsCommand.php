@@ -138,7 +138,7 @@ class PushSnippetsCommand extends Command
         assert(is_array($salesChannelIds));
 
         if ($salesChannelIds === [] || in_array('default', $salesChannelIds, true)) {
-            return [$this->translationProviderResolver->getDefaultProvider()];
+            return [$this->translationProviderResolver->getProvider()];
         }
 
         $providers = [];

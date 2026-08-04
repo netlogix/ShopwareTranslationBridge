@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Netlogix\ShopwareTranslationBridge\Command;
 
 use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\TranslationProviderResolverInterface;
+use Netlogix\ShopwareTranslationBridge\Resolver\ConfigurationResolver;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -30,6 +31,7 @@ class PullSnippetsCommand extends Command
 
     public function __construct(
         private readonly TranslationProviderResolverInterface $translationProviderResolver,
+        private readonly ConfigurationResolver $configurationResolver,
         private readonly EntityRepository $languageRepository,
         private readonly EntityRepository $salesChannelRepository,
         #[Autowire(service: 'translation.writer')]
@@ -45,13 +47,14 @@ class PullSnippetsCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         $translationPath = $this->resolveTranslationPath();
-        $this->ensureDirectoryExists($translationPath);
 
         $domainsFetched = 0;
 
-        if ($this->translationProviderResolver->hasDefaultProvider()) {
+        $defaultProviderName = $this->configurationResolver->getProviderName();
+
+        if ($this->translationProviderResolver->hasProvider()) {
             $domainsFetched += $this->fetchTranslations(
-                $this->translationProviderResolver->getDefaultProvider(),
+                $this->translationProviderResolver->getProvider(),
                 self::REMOTE_DOMAIN,
                 $this->getAllLocales(),
                 $translationPath,
@@ -59,9 +62,9 @@ class PullSnippetsCommand extends Command
             );
         }
 
-        foreach ($this->getSalesChannelIdsWithProviderOverride() as $salesChannelId) {
+        foreach ($this->getSalesChannelIdsWithProviderOverride($defaultProviderName) as $salesChannelId) {
             $domainsFetched += $this->fetchTranslations(
-                $this->translationProviderResolver->getSalesChannelProvider($salesChannelId),
+                $this->translationProviderResolver->getProvider($salesChannelId),
                 $salesChannelId,
                 $this->getLocalesForSalesChannel($salesChannelId),
                 $translationPath,
@@ -141,17 +144,23 @@ class PullSnippetsCommand extends Command
     }
 
     /**
+     * Returns sales channels whose configured provider differs from the global default,
+     * i.e. a real per-channel override. Channels that merely inherit the default are
+     * excluded so their translations are not pulled redundantly.
+     *
      * @return list<string>
      */
-    private function getSalesChannelIdsWithProviderOverride(): array
+    private function getSalesChannelIdsWithProviderOverride(?string $defaultProviderName): array
     {
         $result = $this->salesChannelRepository->searchIds(new Criteria(), Context::createCLIContext());
 
         return array_values(array_filter(
             $result->getIds(),
-            fn (string $salesChannelId): bool => $this->translationProviderResolver->hasSalesChannelProvider(
-                $salesChannelId
-            )
+            function (string $salesChannelId) use ($defaultProviderName): bool {
+                $providerName = $this->configurationResolver->getProviderName($salesChannelId);
+
+                return $providerName !== null && $providerName !== $defaultProviderName;
+            }
         ));
     }
 

@@ -40,13 +40,12 @@ class UpdateTranslationController extends AbstractController
             ->searchIds(new Criteria(), Context::createCLIContext())
             ->getIds();
 
-        // If there is no default provider we only have to update the salesChannels which have translation provider
-        if (!$this->translationProviderResolver->hasDefaultProvider()) {
-            $salesChannelIds = array_filter(
-                $salesChannelIds,
-                $this->translationProviderResolver->hasSalesChannelProvider(...)
-            );
-        }
+        // Keep only sales channels that resolve to a provider. Thanks to Shopware's config
+        // inheritance this covers both a global default and channel-specific overrides.
+        $salesChannelIds = array_values(array_filter(
+            $salesChannelIds,
+            $this->translationProviderResolver->hasProvider(...)
+        ));
 
         if ($salesChannelIds === []) {
             return new JsonApiResponse([
