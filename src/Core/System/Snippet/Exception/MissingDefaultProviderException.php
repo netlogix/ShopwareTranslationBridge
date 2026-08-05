@@ -7,10 +7,14 @@ namespace Netlogix\ShopwareTranslationBridge\Core\System\Snippet\Exception;
 /**
  * Thrown when a default (global) translation provider is required but none is configured.
  */
-final class MissingDefaultProviderException extends TranslationProviderException
+final class MissingDefaultProviderException extends \RuntimeException implements TranslationProviderExceptionInterface
 {
-    public function __construct()
+    public function __construct(int $code = 0, ?\Throwable $previous = null)
     {
-        parent::__construct('No default translation provider configured.');
+        parent::__construct(
+            \sprintf('No default translation provider configured.'),
+            $code,
+            $previous
+        );
     }
 }

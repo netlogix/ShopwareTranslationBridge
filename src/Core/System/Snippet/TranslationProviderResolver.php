@@ -34,12 +34,16 @@ readonly class TranslationProviderResolver implements TranslationProviderResolve
 
         if ($providerName === null) {
             throw $salesChannelId === null
-                ? new MissingDefaultProviderException()
-                : new MissingSalesChannelProviderException($salesChannelId);
+                ? new MissingDefaultProviderException(code: 1785932654)
+                : new MissingSalesChannelProviderException(salesChannelId: $salesChannelId, code: 1785932765);
         }
 
         if (!$this->providerCollection->has($providerName)) {
-            throw new UnknownProviderException($providerName, $salesChannelId);
+            throw new UnknownProviderException(
+                providerName: $providerName,
+                salesChannelId: $salesChannelId,
+                code: 1785932876
+            );
         }
 
         return $this->providerCollection->get($providerName);
