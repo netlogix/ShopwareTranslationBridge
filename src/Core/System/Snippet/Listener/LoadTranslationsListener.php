@@ -28,7 +28,8 @@ class LoadTranslationsListener
             return;
         }
 
-        $respectTranslationFiles = $this->configurationResolver->respectTranslationFiles($extension->salesChannelId);
+        $respectTranslationFiles = $extension->salesChannelId !== null
+            && $this->configurationResolver->respectTranslationFiles($extension->salesChannelId);
 
         // Force usage of translation files
         if ($respectTranslationFiles) {

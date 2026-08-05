@@ -16,7 +16,7 @@ readonly class ConfigurationResolver
 {
     public const string PLUGIN_CONFIG_PREFIX = 'ShopwareTranslationBridge.config';
 
-    public const string KEY_DEFAULT_PROVIDER = self::PLUGIN_CONFIG_PREFIX . '.defaultProvider';
+    public const string KEY_DEFAULT_PROVIDER = self::PLUGIN_CONFIG_PREFIX . '.keyProvider';
 
     public const string KEY_RESPECT_TRANSLATION_FILES = self::PLUGIN_CONFIG_PREFIX . '.respectTranslationFiles';
 
@@ -25,7 +25,7 @@ readonly class ConfigurationResolver
     ) {
     }
 
-    public function respectTranslationFiles(?string $salesChannelId = null): bool
+    public function respectTranslationFiles(string $salesChannelId): bool
     {
         return $this->systemConfigService->getBool(self::KEY_RESPECT_TRANSLATION_FILES, $salesChannelId);
     }
