@@ -50,19 +50,32 @@ class PullSnippetsCommand extends Command
 
         $domainsFetched = 0;
 
-        $defaultProviderName = $this->configurationResolver->getProviderName();
-
-        if ($this->translationProviderResolver->hasProvider()) {
-            $domainsFetched += $this->fetchTranslations(
-                $this->translationProviderResolver->getProvider(),
-                self::REMOTE_DOMAIN,
-                $this->getAllLocales(),
-                $translationPath,
-                $io
+        if (!$this->translationProviderResolver->hasProvider()) {
+            $io->warning(
+                'No translation provider configured. Configure a default provider or at least one sales channel provider.'
             );
+
+            return Command::SUCCESS;
         }
 
-        foreach ($this->getSalesChannelIdsWithProviderOverride($defaultProviderName) as $salesChannelId) {
+        $defaultProviderName = $this->configurationResolver->getProviderName();
+
+        $io->note('Fetching translations for keyProvider');
+        $domainsFetched += $this->fetchTranslations(
+            $this->translationProviderResolver->getProvider(),
+            self::REMOTE_DOMAIN,
+            $this->getAllLocales(),
+            $translationPath,
+            $io
+        );
+
+        $salesChannelIdsWithProvider = $this->getSalesChannelIdsWithProviderOverride($defaultProviderName);
+        if (empty($salesChannelIdsWithProvider)) {
+            $io->note('No own sales-channels providers found.');
+        }
+
+        foreach ($salesChannelIdsWithProvider as $salesChannelId) {
+            $io->note(sprintf('Fetching translations for Sales-Channel-ID: %s.', $salesChannelId));
             $domainsFetched += $this->fetchTranslations(
                 $this->translationProviderResolver->getProvider($salesChannelId),
                 $salesChannelId,
@@ -150,7 +163,7 @@ class PullSnippetsCommand extends Command
      *
      * @return list<string>
      */
-    private function getSalesChannelIdsWithProviderOverride(?string $defaultProviderName): array
+    private function getSalesChannelIdsWithProviderOverride(string $defaultProviderName): array
     {
         $result = $this->salesChannelRepository->searchIds(new Criteria(), Context::createCLIContext());
 
