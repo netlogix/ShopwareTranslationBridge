@@ -40,7 +40,6 @@ readonly class RelevantLocaleResolver implements RelevantLocaleResolverInterface
             if ($salesChannelLanguages === null) {
                 continue;
             }
-            assert($salesChannelLanguages instanceof LanguageCollection);
 
             $languages->merge($salesChannelLanguages);
         }
