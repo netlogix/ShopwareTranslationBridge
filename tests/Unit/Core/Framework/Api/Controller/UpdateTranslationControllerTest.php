@@ -32,10 +32,9 @@ final class UpdateTranslationControllerTest extends TestCase
             ->method('searchIds')
             ->willReturn($this->createIdSearchResult([self::SALES_CHANNEL_ID_1]));
 
-        $providerResolver->expects(self::once())->method('hasDefaultProvider')->willReturn(false);
         $providerResolver
             ->expects(self::once())
-            ->method('hasSalesChannelProvider')
+            ->method('hasProvider')
             ->with(self::SALES_CHANNEL_ID_1)
             ->willReturn(false);
 
@@ -63,8 +62,7 @@ final class UpdateTranslationControllerTest extends TestCase
                 self::SALES_CHANNEL_ID_3
             ]));
 
-        $providerResolver->expects(self::once())->method('hasDefaultProvider')->willReturn(true);
-        $providerResolver->expects(self::never())->method('hasSalesChannelProvider');
+        $providerResolver->expects(self::exactly(3))->method('hasProvider')->willReturn(true);
 
         $messageBus
             ->expects(self::exactly(2))
