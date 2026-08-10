@@ -17,7 +17,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Translation\MessageCatalogue;
 use Symfony\Component\Translation\Provider\ProviderInterface;
 use Symfony\Component\Translation\Writer\TranslationWriterInterface;
@@ -232,10 +231,5 @@ class PullSnippetsCommand extends Command
     private function resolveTranslationPath(): string
     {
         return rtrim($this->translatorDefaultPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . self::STORAGE_DIRECTORY;
-    }
-
-    private function ensureDirectoryExists(string $path): void
-    {
-        (new Filesystem())->mkdir($path);
     }
 }
