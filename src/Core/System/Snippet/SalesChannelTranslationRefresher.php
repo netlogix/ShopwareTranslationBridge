@@ -35,9 +35,13 @@ readonly class SalesChannelTranslationRefresher implements SalesChannelTranslati
         $criteria->addAssociation('language.locale');
 
         try {
-            $this->salesChannelDomainRepository->search($criteria, Context::createCLIContext())->map(
-                $this->warmUpTranslation(...)
-            );
+            $domains = $this->salesChannelDomainRepository->search($criteria, Context::createCLIContext());
+            foreach ($domains as $domain) {
+                if (!$domain instanceof SalesChannelDomainEntity) {
+                    continue;
+                }
+                $this->warmUpTranslation($domain);
+            }
         } finally {
             $this->translator->resetInjection();
         }
