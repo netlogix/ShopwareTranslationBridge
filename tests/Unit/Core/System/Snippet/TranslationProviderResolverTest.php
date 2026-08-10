@@ -4,13 +4,14 @@ declare(strict_types = 1);
 
 namespace Netlogix\ShopwareTranslationBridge\Tests\Unit\Core\System\Snippet;
 
-use InvalidArgumentException;
+use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\Exception\MissingDefaultProviderException;
+use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\Exception\MissingSalesChannelProviderException;
+use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\Exception\UnknownProviderException;
 use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\TranslationProviderResolver;
+use Netlogix\ShopwareTranslationBridge\Resolver\ConfigurationResolver;
 use Netlogix\ShopwareTranslationBridge\Tests\Support\Provider\InMemoryTestProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use ReflectionProperty;
-use RuntimeException;
 use Symfony\Component\Translation\Provider\TranslationProviderCollection;
 
 #[CoversClass(TranslationProviderResolver::class)]
@@ -18,85 +19,99 @@ final class TranslationProviderResolverTest extends TestCase
 {
     private const string SALES_CHANNEL_ID = '2b919afec10730f413cb5682bbed09fd';
 
-    public function testHasDefaultProviderReturnsTrueWhenProviderExists(): void
+    public function testHasProviderReturnsTrueWhenConfiguredProviderExists(): void
     {
-        $providerCollection = new TranslationProviderCollection([
-            'default-provider' => new InMemoryTestProvider('default-provider')
-        ]);
-
-        $resolver = new TranslationProviderResolver($providerCollection, 'default-provider', []);
-
-        static::assertTrue($resolver->hasDefaultProvider());
-    }
-
-    public function testHasSalesChannelProviderThrowsOnInvalidUuid(): void
-    {
-        $resolver = new TranslationProviderResolver(new TranslationProviderCollection([]), null, []);
-
-        $this->expectException(InvalidArgumentException::class);
-
-        $resolver->hasSalesChannelProvider('not-a-uuid');
-    }
-
-    public function testGetProviderPrefersSalesChannelProviderOverDefaultProvider(): void
-    {
-        $salesChannelProvider = new InMemoryTestProvider('sales-channel-provider');
-        $defaultProvider = new InMemoryTestProvider('default-provider');
-
         $resolver = new TranslationProviderResolver(
-            new TranslationProviderCollection([
-                'default-provider' => $defaultProvider,
-                'sales-channel-provider' => $salesChannelProvider
-            ]),
-            'default-provider',
-            [self::SALES_CHANNEL_ID => 'sales-channel-provider']
+            new TranslationProviderCollection(['default-provider' => new InMemoryTestProvider('default-provider')]),
+            $this->createConfigurationResolver('default-provider')
         );
 
-        static::assertSame($salesChannelProvider, $resolver->getProvider(self::SALES_CHANNEL_ID));
+        static::assertTrue($resolver->hasProvider());
     }
 
-    public function testGetProviderFallsBackToDefaultProvider(): void
+    public function testHasProviderReturnsFalseWhenNothingConfigured(): void
     {
-        $defaultProvider = new InMemoryTestProvider('default-provider');
         $resolver = new TranslationProviderResolver(
-            new TranslationProviderCollection(['default-provider' => $defaultProvider]),
-            'default-provider',
-            []
+            new TranslationProviderCollection([]),
+            $this->createConfigurationResolver(null)
         );
 
-        static::assertSame($defaultProvider, $resolver->getProvider(self::SALES_CHANNEL_ID));
+        static::assertFalse($resolver->hasProvider());
     }
 
-    public function testGetProviderThrowsIfNoProviderExists(): void
+    public function testHasProviderReturnsFalseWhenConfiguredProviderIsNotRegistered(): void
     {
-        $resolver = new TranslationProviderResolver(new TranslationProviderCollection([]), null, []);
+        $resolver = new TranslationProviderResolver(
+            new TranslationProviderCollection([]),
+            $this->createConfigurationResolver('missing-provider')
+        );
 
-        $this->expectException(RuntimeException::class);
+        static::assertFalse($resolver->hasProvider());
+    }
+
+    public function testGetProviderReturnsConfiguredDefaultProvider(): void
+    {
+        $provider = new InMemoryTestProvider('default-provider');
+        $resolver = new TranslationProviderResolver(
+            new TranslationProviderCollection(['default-provider' => $provider]),
+            $this->createConfigurationResolver('default-provider')
+        );
+
+        static::assertSame($provider, $resolver->getProvider());
+    }
+
+    public function testGetProviderResolvesSalesChannelScopedProvider(): void
+    {
+        $provider = new InMemoryTestProvider('sales-provider');
+        $resolver = new TranslationProviderResolver(
+            new TranslationProviderCollection(['sales-provider' => $provider]),
+            $this->createConfigurationResolver('sales-provider')
+        );
+
+        static::assertSame($provider, $resolver->getProvider(self::SALES_CHANNEL_ID));
+    }
+
+    public function testGetProviderThrowsWhenNoDefaultProviderConfigured(): void
+    {
+        $resolver = new TranslationProviderResolver(
+            new TranslationProviderCollection([]),
+            $this->createConfigurationResolver(null)
+        );
+
+        $this->expectException(MissingDefaultProviderException::class);
+
+        $resolver->getProvider();
+    }
+
+    public function testGetProviderThrowsWhenNoSalesChannelProviderConfigured(): void
+    {
+        $resolver = new TranslationProviderResolver(
+            new TranslationProviderCollection([]),
+            $this->createConfigurationResolver(null)
+        );
+
+        $this->expectException(MissingSalesChannelProviderException::class);
 
         $resolver->getProvider(self::SALES_CHANNEL_ID);
     }
 
-    public function testResetClearsSalesChannelProviderCache(): void
+    public function testGetProviderThrowsWhenConfiguredProviderIsNotRegistered(): void
     {
-        $provider = new InMemoryTestProvider('sales-channel-provider');
         $resolver = new TranslationProviderResolver(
-            new TranslationProviderCollection(['sales-channel-provider' => $provider]),
-            null,
-            [self::SALES_CHANNEL_ID => 'sales-channel-provider']
+            new TranslationProviderCollection([]),
+            $this->createConfigurationResolver('ghost-provider')
         );
 
-        static::assertSame($provider, $resolver->getSalesChannelProvider(self::SALES_CHANNEL_ID));
-        static::assertNotSame([], $this->getProviderCache($resolver));
+        $this->expectException(UnknownProviderException::class);
 
-        $resolver->reset();
-
-        static::assertSame([], $this->getProviderCache($resolver));
+        $resolver->getProvider();
     }
 
-    private function getProviderCache(TranslationProviderResolver $resolver): array
+    private function createConfigurationResolver(?string $providerName): ConfigurationResolver
     {
-        $reflectionProperty = new ReflectionProperty($resolver, 'providers');
+        $configurationResolver = $this->createStub(ConfigurationResolver::class);
+        $configurationResolver->method('getProviderName')->willReturn($providerName);
 
-        return $reflectionProperty->isInitialized($resolver) ? $reflectionProperty->getValue($resolver) : [];
+        return $configurationResolver;
     }
 }

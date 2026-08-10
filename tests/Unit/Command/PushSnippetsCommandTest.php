@@ -56,7 +56,7 @@ final class PushSnippetsCommandTest extends TestCase
         static::assertInstanceOf(InMemoryTestProvider::class, $provider);
 
         $providerResolver = $this->createStub(TranslationProviderResolverInterface::class);
-        $providerResolver->method('getDefaultProvider')->willReturn($provider);
+        $providerResolver->method('getProvider')->willReturn($provider);
 
         $translator = $this->createStub(AbstractTranslator::class);
         $translator->method('getSnippetSetId')->willReturn('snippet-set-id');
@@ -92,7 +92,7 @@ final class PushSnippetsCommandTest extends TestCase
         static::assertInstanceOf(InMemoryTestProvider::class, $provider);
 
         $providerResolver = $this->createStub(TranslationProviderResolverInterface::class);
-        $providerResolver->method('getSalesChannelProvider')->willReturn($provider);
+        $providerResolver->method('getProvider')->willReturn($provider);
 
         $translator = $this->createStub(AbstractTranslator::class);
         $translator->method('getSnippetSetId')->willReturn('snippet-set-id');
@@ -138,7 +138,7 @@ final class PushSnippetsCommandTest extends TestCase
         ]));
 
         $providerResolver = $this->createStub(TranslationProviderResolverInterface::class);
-        $providerResolver->method('getDefaultProvider')->willReturn($provider);
+        $providerResolver->method('getProvider')->willReturn($provider);
 
         $translator = $this->createStub(AbstractTranslator::class);
         $translator->method('getSnippetSetId')->willReturn('snippet-set-id');
@@ -188,7 +188,7 @@ final class PushSnippetsCommandTest extends TestCase
         ]));
 
         $providerResolver = $this->createStub(TranslationProviderResolverInterface::class);
-        $providerResolver->method('getDefaultProvider')->willReturn($provider);
+        $providerResolver->method('getProvider')->willReturn($provider);
 
         $translator = $this->createStub(AbstractTranslator::class);
         $translator->method('getSnippetSetId')->willReturn('snippet-set-id');

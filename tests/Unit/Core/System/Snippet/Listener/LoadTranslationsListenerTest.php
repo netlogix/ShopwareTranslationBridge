@@ -6,6 +6,7 @@ namespace Netlogix\ShopwareTranslationBridge\Tests\Unit\Core\System\Snippet\List
 
 use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\Listener\LoadTranslationsListener;
 use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\TranslationProviderResolverInterface;
+use Netlogix\ShopwareTranslationBridge\Resolver\ConfigurationResolver;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\System\Snippet\Extension\StorefrontSnippetsExtension;
@@ -42,7 +43,7 @@ final class LoadTranslationsListenerTest extends TestCase
             []
         );
 
-        $listener = new LoadTranslationsListener($providerResolver, true);
+        $listener = new LoadTranslationsListener($providerResolver, $this->createConfigurationResolver(true));
         $listener($extension);
 
         static::assertFalse($extension->isPropagationStopped());
@@ -100,7 +101,7 @@ final class LoadTranslationsListenerTest extends TestCase
         );
         $extension->result = $extension->snippets;
 
-        $listener = new LoadTranslationsListener($providerResolver, false);
+        $listener = new LoadTranslationsListener($providerResolver, $this->createConfigurationResolver(false));
         $listener($extension);
 
         static::assertTrue($extension->isPropagationStopped());
@@ -114,7 +115,7 @@ final class LoadTranslationsListenerTest extends TestCase
         $providerResolver = $this->createMock(TranslationProviderResolverInterface::class);
         $providerResolver->expects(static::once())->method('hasProvider')->willReturn(false);
 
-        $listener = new LoadTranslationsListener($providerResolver, false);
+        $listener = new LoadTranslationsListener($providerResolver, $this->createConfigurationResolver(false));
         $extension = new StorefrontSnippetsExtension(
             ['headline' => 'snippet-value'],
             'de-DE',
@@ -128,5 +129,13 @@ final class LoadTranslationsListenerTest extends TestCase
 
         LoadTranslationsListener::skip(static fn() => $listener($extension));
         $listener($extension);
+    }
+
+    private function createConfigurationResolver(bool $respectTranslationFiles): ConfigurationResolver
+    {
+        $configurationResolver = $this->createStub(ConfigurationResolver::class);
+        $configurationResolver->method('respectTranslationFiles')->willReturn($respectTranslationFiles);
+
+        return $configurationResolver;
     }
 }

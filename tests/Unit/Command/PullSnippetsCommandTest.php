@@ -4,79 +4,92 @@ declare(strict_types = 1);
 
 namespace Netlogix\ShopwareTranslationBridge\Tests\Unit\Command;
 
-use Symfony\Component\Translation\MessageCatalogue;
 use Netlogix\ShopwareTranslationBridge\Command\PullSnippetsCommand;
+use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\TranslationProviderResolverInterface;
+use Netlogix\ShopwareTranslationBridge\Resolver\ConfigurationResolver;
 use Netlogix\ShopwareTranslationBridge\Tests\Support\HelperService;
-use Netlogix\ShopwareTranslationBridge\Tests\Support\Provider\InMemoryTestProviderFactory;
+use Netlogix\ShopwareTranslationBridge\Tests\Support\Provider\InMemoryTestProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
 use Shopware\Core\System\SalesChannel\SalesChannelCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\Translation\MessageCatalogue;
 use Symfony\Component\Translation\TranslatorBag;
-use Symfony\Component\Translation\Provider\TranslationProviderCollection;
 use Symfony\Component\Translation\Writer\TranslationWriterInterface;
 
 #[CoversClass(PullSnippetsCommand::class)]
 final class PullSnippetsCommandTest extends TestCase
 {
     private const string SALES_CHANNEL_ID = '2b919afec10730f413cb5682bbed09fd';
+    private const string TRANSLATOR_DEFAULT_PATH = '/tmp/nlx-translation-bridge';
 
     private HelperService $helperService;
-    private InMemoryTestProviderFactory $providerFactory;
 
     protected function setUp(): void
     {
         $this->helperService = new HelperService();
-        $this->providerFactory = new InMemoryTestProviderFactory();
     }
 
-    public function testExecuteWarnsWhenNoProviderConfigurationExists(): void
+    public function testExecuteWarnsWhenNoProviderIsConfigured(): void
     {
-        $languageRepository = $this->createStub(EntityRepository::class);
-        $salesChannelRepository = $this->createStub(EntityRepository::class);
+        $resolver = $this->createStub(TranslationProviderResolverInterface::class);
+        $resolver->method('hasProvider')->willReturn(false);
+
         $writer = $this->createRecordingWriter();
 
         $command = new PullSnippetsCommand(
-            new TranslationProviderCollection([]),
-            $languageRepository,
-            $salesChannelRepository,
+            $resolver,
+            $this->createStub(ConfigurationResolver::class),
+            $this->createStub(EntityRepository::class),
+            $this->createStub(EntityRepository::class),
             $writer,
-            $this->createProjectDir(),
-            null,
-            []
+            self::TRANSLATOR_DEFAULT_PATH
         );
 
         $commandTester = new CommandTester($command);
         $status = $commandTester->execute([]);
 
         static::assertSame(Command::SUCCESS, $status);
-        static::assertStringContainsString('No translations fetched', $commandTester->getDisplay());
+        static::assertStringContainsString('No translation provider configured', $commandTester->getDisplay());
         static::assertCount(0, $writer->writes);
     }
 
     public function testExecuteFetchesFromDefaultProviderAndWritesTranslations(): void
     {
-        $providers = $this->providerFactory->createPullProviderCollection();
-        $writer = $this->createRecordingWriter();
+        $provider = new InMemoryTestProvider(
+            'default-provider',
+            $this->helperService->createBag('de-DE', ['welcome' => 'Willkommen'])
+        );
+
+        $resolver = $this->createStub(TranslationProviderResolverInterface::class);
+        $resolver->method('hasProvider')->willReturn(true);
+        $resolver->method('getProvider')->willReturn($provider);
+
+        $configurationResolver = $this->createStub(ConfigurationResolver::class);
+        $configurationResolver->method('getProviderName')->willReturn('default-provider');
 
         $languageRepository = $this->createStub(EntityRepository::class);
         $languageRepository->method('search')->willReturn($this->createLanguageSearchResult(['de-DE']));
+
         $salesChannelRepository = $this->createStub(EntityRepository::class);
+        $salesChannelRepository->method('searchIds')->willReturn($this->createIdSearchResult([]));
+
+        $writer = $this->createRecordingWriter();
 
         $command = new PullSnippetsCommand(
-            $providers,
+            $resolver,
+            $configurationResolver,
             $languageRepository,
             $salesChannelRepository,
             $writer,
-            $this->createProjectDir(),
-            'default-provider',
-            []
+            self::TRANSLATOR_DEFAULT_PATH
         );
 
         $commandTester = new CommandTester($command);
@@ -87,33 +100,42 @@ final class PullSnippetsCommandTest extends TestCase
         static::assertCount(1, $writer->writes);
         static::assertSame('json', $writer->writes[0]['format']);
         static::assertArrayHasKey('path', $writer->writes[0]['options']);
+
         $writtenBag = new TranslatorBag();
         $writtenBag->addCatalogue($writer->writes[0]['catalogue']);
         static::assertSame(
-            $this->helperService->translatorBagToArray($this->helperService->createBag('de-DE', [
-                'welcome' => 'Willkommen'
-            ])),
+            $this->helperService->translatorBagToArray(
+                $this->helperService->createBag('de-DE', ['welcome' => 'Willkommen'])
+            ),
             $this->helperService->translatorBagToArray($writtenBag)
         );
     }
 
-    public function testExecuteSkipsSalesChannelProviderWhenNoLocalesWereFound(): void
+    public function testExecuteWarnsWhenNoTranslationsWereFetched(): void
     {
-        $providers = $this->providerFactory->createPullProviderCollection();
+        $resolver = $this->createStub(TranslationProviderResolverInterface::class);
+        $resolver->method('hasProvider')->willReturn(true);
+        $resolver->method('getProvider')->willReturn(new InMemoryTestProvider('default-provider'));
 
+        $configurationResolver = $this->createStub(ConfigurationResolver::class);
+        $configurationResolver->method('getProviderName')->willReturn('default-provider');
+
+        // No enabled locales -> nothing can be fetched for the default provider.
         $languageRepository = $this->createStub(EntityRepository::class);
+        $languageRepository->method('search')->willReturn($this->createLanguageSearchResult([]));
+
         $salesChannelRepository = $this->createStub(EntityRepository::class);
-        $salesChannelRepository->method('search')->willReturn($this->createSalesChannelSearchResult());
+        $salesChannelRepository->method('searchIds')->willReturn($this->createIdSearchResult([]));
+
         $writer = $this->createRecordingWriter();
 
         $command = new PullSnippetsCommand(
-            $providers,
+            $resolver,
+            $configurationResolver,
             $languageRepository,
             $salesChannelRepository,
             $writer,
-            $this->createProjectDir(),
-            null,
-            [self::SALES_CHANNEL_ID => 'sales-provider']
+            self::TRANSLATOR_DEFAULT_PATH
         );
 
         $commandTester = new CommandTester($command);
@@ -124,53 +146,53 @@ final class PullSnippetsCommandTest extends TestCase
         static::assertCount(0, $writer->writes);
     }
 
-    public function testExecuteThrowsExceptionWhenProviderNotFound(): void
+    public function testExecuteFetchesFromSalesChannelProviderOverride(): void
     {
-        $languageRepository = $this->createStub(EntityRepository::class);
-        $languageRepository->method('search')->willReturn($this->createLanguageSearchResult(['de-DE']));
-        $salesChannelRepository = $this->createStub(EntityRepository::class);
-
-        $command = new PullSnippetsCommand(
-            new TranslationProviderCollection([]),
-            $languageRepository,
-            $salesChannelRepository,
-            $this->createRecordingWriter(),
-            $this->createProjectDir(),
-            'non-existent-provider',
-            []
+        $defaultProvider = new InMemoryTestProvider('default-provider');
+        $salesChannelProvider = new InMemoryTestProvider(
+            'sales-provider',
+            $this->helperService->createBag('de-DE', ['checkout' => 'Kasse'])
         );
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Provider "non-existent-provider" not found.');
+        $resolver = $this->createStub(TranslationProviderResolverInterface::class);
+        $resolver->method('hasProvider')->willReturn(true);
+        $resolver->method('getProvider')->willReturnCallback(
+            static fn (?string $salesChannelId = null): InMemoryTestProvider =>
+                $salesChannelId === null ? $defaultProvider : $salesChannelProvider
+        );
 
-        $commandTester = new CommandTester($command);
-        $commandTester->execute([]);
-    }
+        // Default provider name differs from the sales-channel one -> channel is treated as an override.
+        $configurationResolver = $this->createStub(ConfigurationResolver::class);
+        $configurationResolver->method('getProviderName')->willReturnCallback(
+            static fn (?string $salesChannelId = null): string =>
+                $salesChannelId === null ? 'default-provider' : 'sales-provider'
+        );
 
-    public function testExecuteFetchesFromSalesChannelProviderAndWritesTranslations(): void
-    {
-        $providers = $this->providerFactory->createPullProviderCollection();
-        $writer = $this->createRecordingWriter();
-
+        // No global locales -> only the sales-channel override produces a write.
         $languageRepository = $this->createStub(EntityRepository::class);
+        $languageRepository->method('search')->willReturn($this->createLanguageSearchResult([]));
 
         $salesChannel = new SalesChannelEntity();
         $salesChannel->setUniqueIdentifier(self::SALES_CHANNEL_ID);
         $salesChannel->setLanguages($this->helperService->createLanguageCollection(['de-DE']));
 
         $salesChannelRepository = $this->createStub(EntityRepository::class);
+        $salesChannelRepository->method('searchIds')->willReturn(
+            $this->createIdSearchResult([self::SALES_CHANNEL_ID])
+        );
         $salesChannelRepository->method('search')->willReturn(
             $this->createSalesChannelSearchResult($salesChannel)
         );
 
+        $writer = $this->createRecordingWriter();
+
         $command = new PullSnippetsCommand(
-            $providers,
+            $resolver,
+            $configurationResolver,
             $languageRepository,
             $salesChannelRepository,
             $writer,
-            $this->createProjectDir(),
-            null,
-            [self::SALES_CHANNEL_ID => 'sales-provider']
+            self::TRANSLATOR_DEFAULT_PATH
         );
 
         $commandTester = new CommandTester($command);
@@ -183,14 +205,6 @@ final class PullSnippetsCommandTest extends TestCase
         $catalogue = $writer->writes[0]['catalogue'];
         static::assertTrue($catalogue->defines('checkout', self::SALES_CHANNEL_ID));
         static::assertSame('Kasse', $catalogue->get('checkout', self::SALES_CHANNEL_ID));
-    }
-
-    private function createProjectDir(): string
-    {
-        $projectDir = sys_get_temp_dir() . '/shopware-translation-bridge-tests-' . uniqid('', true);
-        mkdir($projectDir, recursive: true);
-
-        return $projectDir;
     }
 
     /**
@@ -220,6 +234,17 @@ final class PullSnippetsCommandTest extends TestCase
             new Criteria(),
             Context::createDefaultContext()
         );
+    }
+
+    /**
+     * @param list<string> $ids
+     */
+    private function createIdSearchResult(array $ids): IdSearchResult
+    {
+        $idSearchResult = $this->createStub(IdSearchResult::class);
+        $idSearchResult->method('getIds')->willReturn($ids);
+
+        return $idSearchResult;
     }
 
     private function createRecordingWriter(): object
