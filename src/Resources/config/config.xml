@@ -6,7 +6,7 @@
         <title lang="de-DE">Translation Bridge</title>
 
         <component name="nlx-translation-provider-select">
-            <name>defaultProvider</name>
+            <name>keyProvider</name>
             <label>Default translation provider</label>
             <label lang="de-DE">Standard-Übersetzungsanbieter</label>
             <helpText>
