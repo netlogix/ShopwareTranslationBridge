@@ -3,7 +3,7 @@ const {ApiService} = Shopware.Classes;
 export default class NlxTranslationApiService extends ApiService {
     constructor(httpClient, loginService, apiEndpoint = '_action/nlx-translation') {
         super(httpClient, loginService, apiEndpoint);
-        this.name = 'nlxNeosContentApiService';
+        this.name = 'nlxTranslationApiService';
     }
 
     updateTranslation() {
@@ -11,6 +11,17 @@ export default class NlxTranslationApiService extends ApiService {
             .post(
                 `${this.getApiBasePath()}/update`,
                 {},
+                {
+                    headers: this.getBasicHeaders(),
+                }
+            )
+            .then((response) => ApiService.handleResponse(response));
+    }
+
+    getProviders() {
+        return this.httpClient
+            .get(
+                `${this.getApiBasePath()}/providers`,
                 {
                     headers: this.getBasicHeaders(),
                 }
