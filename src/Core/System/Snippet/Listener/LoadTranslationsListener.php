@@ -83,11 +83,16 @@ class LoadTranslationsListener
             ? $translationBag->getCatalogue($extension->fallbackLocale)
             : null;
 
-        foreach ($extension->result as $key => $value) {
+        $keys = array_unique(array_merge(
+            array_keys($extension->result),
+            array_keys($catalogue->all(self::TRANSLATION_DOMAIN)),
+            $fallbackCatalogue !== null ? array_keys($fallbackCatalogue->all(self::TRANSLATION_DOMAIN)) : []
+        ));
+
+        foreach ($keys as $key) {
             if ($catalogue->has($key, self::TRANSLATION_DOMAIN)) {
                 $extension->result[$key] = $catalogue->get($key, self::TRANSLATION_DOMAIN);
-            }
-            if ($fallbackCatalogue?->has($key, self::TRANSLATION_DOMAIN)) {
+            } elseif ($fallbackCatalogue?->has($key, self::TRANSLATION_DOMAIN)) {
                 $extension->result[$key] = $fallbackCatalogue->get($key, self::TRANSLATION_DOMAIN);
             }
         }
