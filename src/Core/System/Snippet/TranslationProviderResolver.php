@@ -1,91 +1,51 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Netlogix\ShopwareTranslationBridge\Core\System\Snippet;
 
-use InvalidArgumentException;
-use RuntimeException;
-use Shopware\Core\Framework\Uuid\Uuid;
+use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\Exception\MissingDefaultProviderException;
+use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\Exception\MissingSalesChannelProviderException;
+use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\Exception\UnknownProviderException;
+use Netlogix\ShopwareTranslationBridge\Resolver\ConfigurationResolver;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Translation\Provider\ProviderInterface;
 use Symfony\Component\Translation\Provider\TranslationProviderCollection;
-use Symfony\Contracts\Service\ResetInterface;
 
-class TranslationProviderResolver implements TranslationProviderResolverInterface, ResetInterface
+readonly class TranslationProviderResolver implements TranslationProviderResolverInterface
 {
-    private array $providers = [];
-
-    function __construct(
+    public function __construct(
         #[Autowire(service: 'translation.provider_collection')]
-        private readonly TranslationProviderCollection $providerCollection,
-        #[Autowire(param: 'nlx_storefront_translation.default_provider')]
-        private readonly ?string $defaultProvider,
-        #[Autowire(param: 'nlx_storefront_translation.sales_channel_provider')]
-        private readonly array $providerMap
+        private TranslationProviderCollection $providerCollection,
+        private ConfigurationResolver $configurationResolver
     ) {
     }
 
-    public function hasDefaultProvider(): bool
+    public function hasProvider(?string $salesChannelId = null): bool
     {
-        return $this->defaultProvider !== null && $this->providerCollection->has($this->defaultProvider);
-    }
-
-    public function getDefaultProvider(): ProviderInterface
-    {
-        if (!$this->hasDefaultProvider()) {
-            throw new RuntimeException(\sprintf('Provider "%s" not found.', $this->defaultProvider));
-        }
-
-        return $this->providers['default'] = $this->providerCollection->get($this->defaultProvider);
-    }
-
-    public function hasSalesChannelProvider(string $salesChannelId): bool
-    {
-        if (!Uuid::isValid($salesChannelId)) {
-            throw new InvalidArgumentException(\sprintf('Provider "%s" is not a valid UUID.', $salesChannelId));
-        }
-
-        $providerName = $this->providerMap[$salesChannelId] ?? null;
+        $providerName = $this->configurationResolver->getProviderName($salesChannelId);
 
         return $providerName !== null && $this->providerCollection->has($providerName);
     }
 
-    public function getSalesChannelProvider(string $salesChannelId): ProviderInterface
+    public function getProvider(?string $salesChannelId = null): ProviderInterface
     {
-        if (array_key_exists($salesChannelId, $this->providers)) {
-            return $this->providers[$salesChannelId];
+        $providerName = $this->configurationResolver->getProviderName($salesChannelId);
+
+        if ($providerName === null) {
+            throw $salesChannelId === null
+                ? new MissingDefaultProviderException(code: 1785932654)
+                : new MissingSalesChannelProviderException(salesChannelId: $salesChannelId, code: 1785932765);
         }
 
-        if (!$this->hasProvider($salesChannelId)) {
-            throw new RuntimeException(\sprintf('No provider for salesChannel "%s" not found.', $salesChannelId));
+        if (!$this->providerCollection->has($providerName)) {
+            throw new UnknownProviderException(
+                providerName: $providerName,
+                salesChannelId: $salesChannelId,
+                code: 1785932876
+            );
         }
 
-        $providerName = $this->providerMap[$salesChannelId];
-        assert(is_string($providerName), 'Provider map value must be string');
-
-        return $this->providers[$salesChannelId] = $this->providerCollection->get($providerName);
-    }
-
-    public function hasProvider(string $salesChannelId): bool
-    {
-        return $this->hasDefaultProvider() || $this->hasSalesChannelProvider($salesChannelId);
-    }
-
-    public function getProvider(string $salesChannelId): ProviderInterface
-    {
-        if ($this->hasSalesChannelProvider($salesChannelId)) {
-            return $this->getSalesChannelProvider($salesChannelId);
-        }
-        if ($this->hasDefaultProvider()) {
-            return $this->getDefaultProvider();
-        }
-
-        throw new RuntimeException(\sprintf('No provider for salesChannel "%s" not found.', $salesChannelId));
-    }
-
-    public function reset(): void
-    {
-        unset($this->providers);
+        return $this->providerCollection->get($providerName);
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Netlogix\ShopwareTranslationBridge\Message;
 
@@ -16,9 +16,8 @@ readonly class TranslationUpdateMessage
      */
     public array $salesChannelIds;
 
-    function __construct(
-        string ...$salesChannelIds
-    ) {
+    public function __construct(string ...$salesChannelIds)
+    {
         foreach ($salesChannelIds as $salesChannelId) {
             if (!Uuid::isValid($salesChannelId)) {
                 throw new InvalidArgumentException(sprintf('SalesChannelId "%s" is not a valid UUID', $salesChannelId));

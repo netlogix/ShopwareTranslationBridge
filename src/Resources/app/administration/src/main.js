@@ -1,12 +1,15 @@
-import './module/nlx-translation-update'
-import './overrride/module/sw-settings-cache-index'
-import TranslationApiService from "./service/translationApi.Service";
+import TranslationApiService from './service/translationApi.Service';
 
 const {Application} = Shopware;
 
 Shopware.Component.register(
     'nlx-translation-update',
     () => import('./module/nlx-translation-update')
+);
+
+Shopware.Component.register(
+    'nlx-translation-provider-select',
+    () => import('./component/nlx-translation-provider-select')
 );
 
 Shopware.Component.override(

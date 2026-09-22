@@ -1,10 +1,11 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Netlogix\ShopwareTranslationBridge\Command;
 
-use RuntimeException;
+use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\TranslationProviderResolverInterface;
+use Netlogix\ShopwareTranslationBridge\Resolver\ConfigurationResolver;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -16,29 +17,27 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Translation\MessageCatalogue;
-use Symfony\Component\Translation\Provider\TranslationProviderCollection;
+use Symfony\Component\Translation\Provider\ProviderInterface;
 use Symfony\Component\Translation\Writer\TranslationWriterInterface;
 
 #[AsCommand('sw:snippets:pull')]
 class PullSnippetsCommand extends Command
 {
     private const string REMOTE_DOMAIN = 'messages';
+
     private const string STORAGE_DIRECTORY = 'nlx-storefront-translation';
 
-    function __construct(
-        #[Autowire(service: 'translation.provider_collection')]
-        private readonly TranslationProviderCollection $providers,
+    public function __construct(
+        private readonly TranslationProviderResolverInterface $translationProviderResolver,
+        private readonly ConfigurationResolver $configurationResolver,
         private readonly EntityRepository $languageRepository,
         private readonly EntityRepository $salesChannelRepository,
         #[Autowire(service: 'translation.writer')]
         private readonly TranslationWriterInterface $translationWriter,
         #[Autowire(param: 'translator.default_path')]
-        private readonly string $translatorDefaultPath,
-        #[Autowire(param: 'nlx_storefront_translation.default_provider')]
-        private readonly ?string $defaultProvider,
-        #[Autowire(param: 'nlx_storefront_translation.sales_channel_provider')]
-        private readonly array $salesChannelProviders
+        private readonly string $translatorDefaultPath
     ) {
         parent::__construct();
     }
@@ -48,27 +47,37 @@ class PullSnippetsCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         $translationPath = $this->resolveTranslationPath();
-        $this->ensureDirectoryExists($translationPath);
 
         $domainsFetched = 0;
 
-        if (is_string($this->defaultProvider) && $this->defaultProvider !== '') {
-            $domainsFetched += $this->fetchTranslations(
-                $this->defaultProvider,
-                self::REMOTE_DOMAIN,
-                $this->getAllLocales(),
-                $translationPath,
-                $io
+        if (!$this->translationProviderResolver->hasProvider()) {
+            $io->warning(
+                'No translation provider configured. Configure a default provider or at least one sales channel provider.'
             );
+
+            return Command::SUCCESS;
         }
 
-        foreach ($this->salesChannelProviders as $salesChannelId => $providerName) {
-            if (!is_string($providerName)) {
-                continue;
-            }
+        $defaultProviderName = $this->configurationResolver->getProviderName();
 
+        $io->note('Fetching translations for keyProvider');
+        $domainsFetched += $this->fetchTranslations(
+            $this->translationProviderResolver->getProvider(),
+            self::REMOTE_DOMAIN,
+            $this->getAllLocales(),
+            $translationPath,
+            $io
+        );
+
+        $salesChannelIdsWithProvider = $this->getSalesChannelIdsWithProviderOverride($defaultProviderName);
+        if (empty($salesChannelIdsWithProvider)) {
+            $io->note('No own sales-channels providers found.');
+        }
+
+        foreach ($salesChannelIdsWithProvider as $salesChannelId) {
+            $io->note(sprintf('Fetching translations for Sales-Channel-ID: %s.', $salesChannelId));
             $domainsFetched += $this->fetchTranslations(
-                $providerName,
+                $this->translationProviderResolver->getProvider($salesChannelId),
                 $salesChannelId,
                 $this->getLocalesForSalesChannel($salesChannelId),
                 $translationPath,
@@ -93,23 +102,20 @@ class PullSnippetsCommand extends Command
      * @param list<string> $locales
      */
     private function fetchTranslations(
-        string $providerName,
+        ProviderInterface $provider,
         string $targetDomain,
         array $locales,
         string $translationPath,
         SymfonyStyle $io
     ): int {
+        $providerName = $this->getProviderName($provider);
+
         if ($locales === []) {
             $io->note(sprintf('Skipping "%s" because no locales were found.', $targetDomain));
 
             return 0;
         }
 
-        if (!$this->providers->has($providerName)) {
-            throw new RuntimeException(sprintf('Provider "%s" not found.', $providerName));
-        }
-
-        $provider = $this->providers->get($providerName);
         $translationBag = $provider->read([self::REMOTE_DOMAIN], $locales);
 
         $written = 0;
@@ -123,7 +129,9 @@ class PullSnippetsCommand extends Command
             $newCatalogue = new MessageCatalogue($catalogue->getLocale());
             $newCatalogue->add($messages, $targetDomain);
 
-            $this->translationWriter->write($newCatalogue, 'json', ['path' => $translationPath]);
+            $this->translationWriter->write($newCatalogue, 'json', [
+                'path' => $translationPath,
+            ]);
             ++$written;
         }
 
@@ -143,12 +151,39 @@ class PullSnippetsCommand extends Command
         return 1;
     }
 
+    private function getProviderName(ProviderInterface $provider): string
+    {
+        return parse_url((string) $provider, \PHP_URL_SCHEME) ?: 'unknown';
+    }
+
+    /**
+     * Returns sales channels whose configured provider differs from the global default,
+     * i.e. a real per-channel override. Channels that merely inherit the default are
+     * excluded so their translations are not pulled redundantly.
+     *
+     * @return list<string>
+     */
+    private function getSalesChannelIdsWithProviderOverride(string $defaultProviderName): array
+    {
+        $result = $this->salesChannelRepository->searchIds(new Criteria(), Context::createCLIContext());
+
+        return array_values(array_filter(
+            $result->getIds(),
+            function (string $salesChannelId) use ($defaultProviderName): bool {
+                $providerName = $this->configurationResolver->getProviderName($salesChannelId);
+
+                return $providerName !== null && $providerName !== $defaultProviderName;
+            }
+        ));
+    }
+
     /**
      * @return list<string>
      */
     private function getAllLocales(): array
     {
-        $criteria = new Criteria()->addAssociation('locale');
+        $criteria = new Criteria()
+            ->addAssociation('locale');
         $result = $this->languageRepository->search($criteria, Context::createCLIContext());
         $languages = $result->getEntities();
         assert($languages instanceof LanguageCollection);
@@ -201,12 +236,6 @@ class PullSnippetsCommand extends Command
 
     private function ensureDirectoryExists(string $path): void
     {
-        if (is_dir($path)) {
-            return;
-        }
-
-        if (!mkdir($path, 0777, true) && !is_dir($path)) {
-            throw new RuntimeException(sprintf('Unable to create translation directory "%s".', $path));
-        }
+        (new Filesystem())->mkdir($path);
     }
 }
