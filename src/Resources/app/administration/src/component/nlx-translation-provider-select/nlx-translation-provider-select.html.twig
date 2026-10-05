@@ -1,0 +1,11 @@
+{% block nlx_translation_provider_select %}
+<sw-single-select
+    :value="value"
+    :label="label"
+    :help-text="helpText"
+    :options="options"
+    :is-loading="isLoading"
+    :error="error"
+    @update:value="onChange"
+/>
+{% endblock %}

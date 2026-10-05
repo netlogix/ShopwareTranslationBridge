@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Netlogix\ShopwareTranslationBridge\Core\System;
 
@@ -13,7 +13,7 @@ use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 
 readonly class RelevantLocaleResolver implements RelevantLocaleResolverInterface
 {
-    function __construct(
+    public function __construct(
         private EntityRepository $salesChannelRepository
     ) {
     }
@@ -45,6 +45,6 @@ readonly class RelevantLocaleResolver implements RelevantLocaleResolverInterface
             $languages->merge($salesChannelLanguages);
         }
 
-        return array_filter($languages->map(fn(LanguageEntity $language) => $language->getLocale()?->getCode()));
+        return array_filter($languages->map(fn (LanguageEntity $language) => $language->getLocale()?->getCode()));
     }
 }
