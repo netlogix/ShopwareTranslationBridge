@@ -16,7 +16,6 @@ use Shopware\Core\Framework\Adapter\Translation\AbstractTranslator;
 use Shopware\Core\System\Snippet\SnippetService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
-use Symfony\Component\Translation\Provider\TranslationProviderCollection;
 
 #[CoversClass(PushSnippetsCommand::class)]
 final class PushSnippetsCommandTest extends TestCase
@@ -35,7 +34,6 @@ final class PushSnippetsCommandTest extends TestCase
     public function testExecuteFailsWhenInvalidLocalesAreProvided(): void
     {
         $command = new PushSnippetsCommand(
-            new TranslationProviderCollection([]),
             $this->createStub(SnippetService::class),
             $this->createStub(AbstractTranslator::class),
             $this->createStub(TranslationProviderResolverInterface::class),
@@ -65,7 +63,6 @@ final class PushSnippetsCommandTest extends TestCase
         $snippetService->method('getStorefrontSnippets')->willReturn(['greeting' => 'Hallo']);
 
         $command = new PushSnippetsCommand(
-            $providers,
             $snippetService,
             $translator,
             $providerResolver,
@@ -101,7 +98,6 @@ final class PushSnippetsCommandTest extends TestCase
         $snippetService->method('getStorefrontSnippets')->willReturn(['greeting' => 'Hallo']);
 
         $command = new PushSnippetsCommand(
-            $providers,
             $snippetService,
             $translator,
             $providerResolver,
@@ -150,7 +146,6 @@ final class PushSnippetsCommandTest extends TestCase
         ]);
 
         $command = new PushSnippetsCommand(
-            $providers,
             $snippetService,
             $translator,
             $providerResolver,
@@ -199,7 +194,6 @@ final class PushSnippetsCommandTest extends TestCase
         ]);
 
         $command = new PushSnippetsCommand(
-            $providers,
             $snippetService,
             $translator,
             $providerResolver,

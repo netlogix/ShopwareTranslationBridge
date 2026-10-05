@@ -15,7 +15,6 @@ export default {
 
     data() {
         return {
-            componentIsBuilding: true,
             processes: false,
             processSuccess: false
         };

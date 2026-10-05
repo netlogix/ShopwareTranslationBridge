@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace Netlogix\ShopwareTranslationBridge\Command;
 
+use Netlogix\ShopwareTranslationBridge\ShopwareTranslationBridge;
 use RuntimeException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -24,7 +25,6 @@ use Symfony\Component\Translation\Writer\TranslationWriterInterface;
 class PullSnippetsCommand extends Command
 {
     private const string REMOTE_DOMAIN = 'messages';
-    private const string STORAGE_DIRECTORY = 'nlx-storefront-translation';
 
     function __construct(
         #[Autowire(service: 'translation.provider_collection')]
@@ -196,7 +196,11 @@ class PullSnippetsCommand extends Command
 
     private function resolveTranslationPath(): string
     {
-        return rtrim($this->translatorDefaultPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . self::STORAGE_DIRECTORY;
+        return (
+            rtrim($this->translatorDefaultPath, DIRECTORY_SEPARATOR)
+            . DIRECTORY_SEPARATOR
+            . ShopwareTranslationBridge::STORAGE_DIRECTORY
+        );
     }
 
     private function ensureDirectoryExists(string $path): void
@@ -205,7 +209,7 @@ class PullSnippetsCommand extends Command
             return;
         }
 
-        if (!mkdir($path, 0777, true) && !is_dir($path)) {
+        if (!mkdir($path, 0o777, true) && !is_dir($path)) {
             throw new RuntimeException(sprintf('Unable to create translation directory "%s".', $path));
         }
     }

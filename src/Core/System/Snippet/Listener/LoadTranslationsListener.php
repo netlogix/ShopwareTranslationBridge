@@ -83,10 +83,14 @@ class LoadTranslationsListener
             ? $translationBag->getCatalogue($extension->fallbackLocale)
             : null;
 
-        foreach ($extension->result as $key => $value) {
+        // The requested locale takes precedence, the fallback locale only fills gaps
+        foreach (array_keys($extension->result) as $key) {
             if ($catalogue->has($key, self::TRANSLATION_DOMAIN)) {
                 $extension->result[$key] = $catalogue->get($key, self::TRANSLATION_DOMAIN);
+
+                continue;
             }
+
             if ($fallbackCatalogue?->has($key, self::TRANSLATION_DOMAIN)) {
                 $extension->result[$key] = $fallbackCatalogue->get($key, self::TRANSLATION_DOMAIN);
             }

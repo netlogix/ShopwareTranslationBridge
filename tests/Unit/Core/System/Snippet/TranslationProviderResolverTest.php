@@ -93,6 +93,34 @@ final class TranslationProviderResolverTest extends TestCase
         static::assertSame([], $this->getProviderCache($resolver));
     }
 
+    public function testResolverCanBeUsedAfterReset(): void
+    {
+        $provider = new InMemoryTestProvider('sales-channel-provider');
+        $resolver = new TranslationProviderResolver(
+            new TranslationProviderCollection(['sales-channel-provider' => $provider]),
+            null,
+            [self::SALES_CHANNEL_ID => 'sales-channel-provider']
+        );
+
+        $resolver->getSalesChannelProvider(self::SALES_CHANNEL_ID);
+        $resolver->reset();
+
+        static::assertSame($provider, $resolver->getSalesChannelProvider(self::SALES_CHANNEL_ID));
+    }
+
+    public function testGetSalesChannelProviderThrowsWhenOnlyDefaultProviderExists(): void
+    {
+        $resolver = new TranslationProviderResolver(
+            new TranslationProviderCollection(['default-provider' => new InMemoryTestProvider('default-provider')]),
+            'default-provider',
+            []
+        );
+
+        $this->expectException(RuntimeException::class);
+
+        $resolver->getSalesChannelProvider(self::SALES_CHANNEL_ID);
+    }
+
     private function getProviderCache(TranslationProviderResolver $resolver): array
     {
         $reflectionProperty = new ReflectionProperty($resolver, 'providers');

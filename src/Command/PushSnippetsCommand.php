@@ -7,14 +7,11 @@ namespace Netlogix\ShopwareTranslationBridge\Command;
 use Netlogix\ShopwareTranslationBridge\Core\System\RelevantLocaleResolverInterface;
 use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\Listener\LoadTranslationsListener;
 use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\TranslationProviderResolverInterface;
-use Override;
 use Shopware\Core\Framework\Adapter\Translation\AbstractTranslator;
 use Shopware\Core\Framework\Adapter\Translation\Translator;
 use Shopware\Core\System\Snippet\SnippetService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Completion\CompletionInput;
-use Symfony\Component\Console\Completion\CompletionSuggestions;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -23,15 +20,12 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Translation\MessageCatalogue;
 use Symfony\Component\Translation\Provider\ProviderInterface;
-use Symfony\Component\Translation\Provider\TranslationProviderCollection;
 use Symfony\Component\Translation\TranslatorBag;
 
 #[AsCommand('sw:snippets:push')]
 class PushSnippetsCommand extends Command
 {
     function __construct(
-        #[Autowire(service: 'translation.provider_collection')]
-        private readonly TranslationProviderCollection $providers,
         private readonly SnippetService $snippetService,
         #[Autowire(service: Translator::class)]
         private readonly AbstractTranslator $translator,
@@ -39,14 +33,6 @@ class PushSnippetsCommand extends Command
         private readonly RelevantLocaleResolverInterface $relevantLocaleResolver
     ) {
         parent::__construct();
-    }
-
-    #[Override]
-    public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void
-    {
-        if ($input->mustSuggestArgumentValuesFor('provider')) {
-            $suggestions->suggestValues($this->providers->keys());
-        }
     }
 
     protected function configure(): void

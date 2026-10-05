@@ -76,7 +76,7 @@ final class LoadTranslationsListenerTest extends TestCase
         $fallbackCatalogue = new MessageCatalogue('en-GB');
         $fallbackCatalogue->add([
             'fbOnly' => 'from-fallback',
-            'both' => 'fallback-wins'
+            'both' => 'fallback-value'
         ], LoadTranslationsListener::TRANSLATION_DOMAIN);
 
         $translationBag = new TranslatorBag();
@@ -106,7 +106,7 @@ final class LoadTranslationsListenerTest extends TestCase
         static::assertTrue($extension->isPropagationStopped());
         static::assertSame('from-locale', $extension->result['locOnly']);
         static::assertSame('from-fallback', $extension->result['fbOnly']);
-        static::assertSame('fallback-wins', $extension->result['both']);
+        static::assertSame('locale-priority', $extension->result['both']);
     }
 
     public function testSkipSuppressesInvocationOnlyInsideCallback(): void

@@ -12,6 +12,7 @@ use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\TranslationProviderRe
 use Netlogix\ShopwareTranslationBridge\Core\System\Snippet\TranslationProviderResolverInterface;
 use Override;
 use Shopware\Core\Framework\Plugin;
+use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\Container;
@@ -20,11 +21,36 @@ use Symfony\Component\DependencyInjection\Exception\RuntimeException;
 use Symfony\Component\DependencyInjection\Extension\ConfigurableExtensionInterface;
 use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\Bundle\BundleExtension;
 
 class ShopwareTranslationBridge extends Plugin implements ConfigurableExtensionInterface
 {
+    /**
+     * Directory below `translator.default_path` where `sw:snippets:pull` stores the fetched translations
+     */
+    public const string STORAGE_DIRECTORY = 'nlx-storefront-translation';
+
     private string $extensionAlias;
+
+    #[Override]
+    public function uninstall(UninstallContext $uninstallContext): void
+    {
+        parent::uninstall($uninstallContext);
+
+        if ($uninstallContext->keepUserData()) {
+            return;
+        }
+
+        $translatorDefaultPath = $this->container->getParameter('translator.default_path');
+        if (!is_string($translatorDefaultPath)) {
+            return;
+        }
+
+        new Filesystem()->remove(
+            rtrim($translatorDefaultPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . self::STORAGE_DIRECTORY
+        );
+    }
 
     public function configure(DefinitionConfigurator $definition): void
     {

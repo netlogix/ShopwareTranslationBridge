@@ -2,6 +2,13 @@
 
 This plugin provides a bridge to connect Shopware with any Translation Provider that is supported by the [Symfony Translation Component](https://symfony.com/doc/current/translation.html#translation-providers). It allows you to manage your storefront snippets via a third-party translation service.
 
+## Requirements
+
+* Shopware `~6.7.1`
+* PHP `>=8.4`
+* A Symfony translation provider bridge, e.g. `symfony/crowdin-translation-provider`, `symfony/lokalise-translation-provider`, `symfony/loco-translation-provider` or `symfony/phrase-translation-provider`
+* A running message queue worker (for the asynchronous translation update)
+
 ## Installation
 
 ```bash
@@ -11,15 +18,26 @@ bin/console plugin:install --activate ShopwareTranslationBridge
 
 ## Configuration
 
-The connection to the translation provider is configured via a DSN (Data Source Name). You need to create a configuration file, for example `config/packages/shopware_translation_bridge.yaml`, to set up the providers.
+The connection to the translation provider is configured via a DSN (Data Source Name) in the Symfony translator configuration (`framework.translator.providers`). The plugin then references these providers by their name. You can configure a default provider and a specific provider for each sales channel.
 
-The plugin uses the DSN from the `ShopwareTranslationBridge.config.providerDsn` system config key as a default. You can also configure a specific DSN for each sales channel.
+```yaml
+# config/packages/translation.yaml
+framework:
+  translator:
+    providers:
+      providerServiceName:
+        dsn: '%env(CROWDIN_DSN)%'
+        domains: ['messages']
+        locales: ['de-DE', 'en-GB']
+```
+
+The plugin itself is configured in `config/packages/shopware_translation_bridge.yaml`:
 
 | option                    | type           | default | info                                                                                               |
 |---------------------------|----------------|---------|----------------------------------------------------------------------------------------------------|
 | default_provider          | `null\|string` | `null`  | Service name from `framework.translator.providers`. If `null` there is no fallback provider.       |
 | respect_translation_files | `bool`         | `true`  | should it overlay the snippet files with the translation files `framework.translator.default_path` |
-| sales_channel_providers   | `array`        | `[]`    | SalesChannel specific providers. Like `default_provider` but individiual for every salesChannel    |
+| sales_channel_providers   | `array`        | `[]`    | SalesChannel specific providers. Like `default_provider` but individual for every salesChannel    |
 
 ### Example Configuration
 
@@ -80,22 +98,20 @@ bin/console sw:snippets:pull [salesChannelId1]
 Flushes the translation cache. This is useful after pulling new translations to make them visible in the storefront.
 
 ```bash
-bin/console sw:cache:flush:translation
+bin/console cache:translation:flush
 ```
 
 ## API Endpoint
 
-This plugin provides an API endpoint to trigger a translation update for specific sales channels. This is useful for integrating with webhooks from translation providers (e.g., when translations are completed).
+This plugin provides an Admin API endpoint to trigger a translation update. This is useful for integrating with webhooks from translation providers (e.g., when translations are completed). The same action is available in the administration under *Settings > System > Caches & indexes* ("Update translations").
 
-*   **URL:** `/api/_action/nlx/translation/update`
+*   **URL:** `/api/_action/nlx-translation/update`
 *   **Method:** `POST`
-*   **Body (JSON):**
-    ```json
-    {
-      "salesChannelIds": ["SALES_CHANNEL_ID_1", "SALES_CHANNEL_ID_2"]
-    }
-    ```
+*   **Body:** none
+*   **Required privilege:** `system:cache:info`
+
+All sales channels that have a translation provider (either a sales channel specific one or the default provider) are updated. If no provider is configured at all, the endpoint answers with `503 Service Unavailable`.
 
 ## Asynchronous Processing
 
-When the API endpoint is called, a message is dispatched to the Shopware message queue for each specified sales channel. A message handler then processes the queue and updates the translations for each sales channel asynchronously in the background.
+When the API endpoint is called, messages (in batches of 5 sales channels) are dispatched to the Shopware message queue. A message handler then processes the queue and updates the translations for each sales channel asynchronously in the background.

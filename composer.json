@@ -1,12 +1,37 @@
 {
     "name": "netlogix/shopware-translation-bridge",
-    "description": "Load storefront translations from symfony/translation provider",
+    "description": "Connects the Shopware storefront snippets with any Symfony translation provider (e.g. Crowdin, Lokalise, Loco, Phrase).",
     "license": "MIT",
     "type": "shopware-platform-plugin",
+    "keywords": [
+        "shopware",
+        "shopware-plugin",
+        "translation",
+        "snippets",
+        "crowdin",
+        "lokalise",
+        "loco",
+        "phrase"
+    ],
+    "authors": [
+        {
+            "name": "netlogix",
+            "email": "websolutions@netlogix.de",
+            "homepage": "https://websolutions.netlogix.de",
+            "role": "Manufacturer"
+        }
+    ],
+    "homepage": "https://github.com/netlogix/ShopwareTranslationBridge",
+    "support": {
+        "issues": "https://github.com/netlogix/ShopwareTranslationBridge/issues",
+        "source": "https://github.com/netlogix/ShopwareTranslationBridge"
+    },
     "require": {
-        "php": ">8.3",
-        "shopware/storefront": ">=6.7.1.0",
-        "symfony/translation": ">7.0.0"
+        "php": ">=8.4",
+        "shopware/administration": "~6.7.1",
+        "shopware/core": "~6.7.1",
+        "shopware/storefront": "~6.7.1",
+        "symfony/translation": "^7.0"
     },
     "require-dev": {
         "carthage-software/mago": "*",
@@ -32,11 +57,23 @@
         }
     },
     "extra": {
+        "description": {
+            "de-DE": "Verbindet die Storefront-Textbausteine mit beliebigen Symfony Translation Providern (z. B. Crowdin, Lokalise, Loco, Phrase).",
+            "en-GB": "Connects the storefront snippets with any Symfony translation provider (e.g. Crowdin, Lokalise, Loco, Phrase)."
+        },
         "label": {
             "de-DE": "Translation Bridge",
             "en-GB": "Translation Bridge"
         },
-        "shopware-plugin-class": "Netlogix\\ShopwareTranslationBridge\\ShopwareTranslationBridge"
+        "manufacturerLink": {
+            "de-DE": "https://websolutions.netlogix.de",
+            "en-GB": "https://websolutions.netlogix.de"
+        },
+        "shopware-plugin-class": "Netlogix\\ShopwareTranslationBridge\\ShopwareTranslationBridge",
+        "supportLink": {
+            "de-DE": "https://github.com/netlogix/ShopwareTranslationBridge/issues",
+            "en-GB": "https://github.com/netlogix/ShopwareTranslationBridge/issues"
+        }
     },
     "scripts": {
         "apply-coding-standard": [
