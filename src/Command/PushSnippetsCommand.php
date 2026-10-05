@@ -110,7 +110,6 @@ class PushSnippetsCommand extends Command
     {
         /** @var string[] $locales */
         $locales = $input->getOption('locales');
-        assert(is_array($locales));
 
         if ($locales !== []) {
             $missingLocales = array_diff($locales, $this->relevantLocaleResolver->getAll());

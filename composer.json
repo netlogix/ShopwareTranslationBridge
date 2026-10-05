@@ -3,16 +3,24 @@
     "description": "Load storefront translations from symfony/translation provider",
     "license": "MIT",
     "type": "shopware-platform-plugin",
+    "authors": [
+        {
+            "name": "netlogix GmbH & Co. KG"
+        }
+    ],
     "require": {
         "php": ">8.3",
         "shopware/storefront": ">=6.7.1.0",
+        "shopware/core": "~6.7.1",
         "symfony/translation": ">7.0.0"
     },
     "require-dev": {
         "carthage-software/mago": "*",
         "ergebnis/composer-normalize": "*",
         "frosh/shopware-rector": "*",
-        "phpunit/phpunit": "^13.0.0"
+        "phpunit/phpunit": "^13.0.0",
+        "netlogix/coding-guidelines-php": "^1.0",
+        "shopwarelabs/phpstan-shopware": "^0.2.3"
     },
     "autoload": {
         "psr-4": {
@@ -28,15 +36,28 @@
         "allow-plugins": {
             "carthage-software/mago": true,
             "ergebnis/composer-normalize": true,
-            "symfony/runtime": false
+            "symfony/runtime": false,
+            "php-http/discovery": true
         }
     },
     "extra": {
+        "description": {
+            "de-DE": "Dieses Plugin fügt Shopware Support für externe Translation Provider hinzu. Damit lassen sich Übersetzungen aus Symfony Translation Providern, wie z.B. Tolgee, in Shopware laden.",
+            "en-GB": "This plugin adds support for external translation providers to Shopware. It allows loading translations from Symfony translation providers, such as Tolgee, into Shopware."
+        },
         "label": {
             "de-DE": "Translation Bridge",
             "en-GB": "Translation Bridge"
         },
-        "shopware-plugin-class": "Netlogix\\ShopwareTranslationBridge\\ShopwareTranslationBridge"
+        "manufacturerLink": {
+            "de-DE": "https://www.netlogix.de",
+            "en-GB": "https://www.netlogix.de"
+        },
+        "shopware-plugin-class": "Netlogix\\ShopwareTranslationBridge\\ShopwareTranslationBridge",
+        "supportLink": {
+            "de-DE": "https://www.netlogix.de",
+            "en-GB": "https://www.netlogix.de"
+        }
     },
     "scripts": {
         "apply-coding-standard": [
@@ -49,6 +70,7 @@
         "format": "mago fmt --dry-run",
         "format:fix": "mago fmt",
         "lint": "mago lint",
+        "phpstan": "vendor/bin/phpstan",
         "rector": "rector process --dry-run",
         "rector:fix": "rector process",
         "test": [

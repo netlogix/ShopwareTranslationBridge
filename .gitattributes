@@ -11,4 +11,9 @@
 /phpstan.neon.dist export-ignore
 /phpstan.shopware-6.7.1.0.neon.dist export-ignore
 /phpunit.xml.dist export-ignore
+/phpunit.xml export-ignore
+/phpunit.cache export-ignore
 /rector.php export-ignore
+/composer.lock export-ignore
+/AGENTS.md export-ignore
+/magi.toml export-ignore
