@@ -10,7 +10,7 @@
     ],
     "require": {
         "php": ">8.3",
-        "shopware/storefront": ">=6.7.1.0",
+        "shopware/storefront": "~6.7.1",
         "shopware/core": "~6.7.1",
         "symfony/translation": ">7.0.0"
     },
@@ -18,7 +18,7 @@
         "carthage-software/mago": "*",
         "ergebnis/composer-normalize": "*",
         "frosh/shopware-rector": "*",
-        "phpunit/phpunit": "^13.0.0",
+        "phpunit/phpunit": "^11.0",
         "netlogix/coding-guidelines-php": "^1.0",
         "shopwarelabs/phpstan-shopware": "^0.2.3"
     },

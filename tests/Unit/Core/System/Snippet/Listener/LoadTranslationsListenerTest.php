@@ -107,7 +107,7 @@ final class LoadTranslationsListenerTest extends TestCase
         static::assertTrue($extension->isPropagationStopped());
         static::assertSame('from-locale', $extension->result['locOnly']);
         static::assertSame('from-fallback', $extension->result['fbOnly']);
-        static::assertSame('fallback-wins', $extension->result['both']);
+        static::assertSame('locale-priority', $extension->result['both']);
     }
 
     public function testSkipSuppressesInvocationOnlyInsideCallback(): void

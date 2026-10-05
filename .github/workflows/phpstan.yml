@@ -24,9 +24,11 @@ jobs:
         phpVersion: ['8.3', '8.4']
         shopware:
           - version: '6.7.1.0'
-            phpstanConfig: 'phpstan.shopware-6.7.1.0.neon.dist'
+            phpstanConfig: 'phpstan.neon.dist'
+            allowInsecure: true
           - version: '^6.7.1'
             phpstanConfig: 'phpstan.neon.dist'
+            allowInsecure: false
 
     steps:
       - name: 'Checkout code'
@@ -43,11 +45,17 @@ jobs:
         shell: bash
         run: composer validate
 
+      - name: 'Allow insecure Shopware versions'
+        if: matrix.shopware.allowInsecure
+        shell: bash
+        run: composer config audit.block-insecure false
+
       - name: 'Set Shopware Version'
         shell: bash
         run: >
           composer require --no-interaction --no-update
           shopware/core:${{ matrix.shopware.version }}
+          shopware/storefront:${{ matrix.shopware.version }}
 
       - name: 'Install Composer Dependencies'
         shell: bash
