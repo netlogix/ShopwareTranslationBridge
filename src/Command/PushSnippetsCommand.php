@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Netlogix\ShopwareTranslationBridge\Command;
 
@@ -29,7 +29,7 @@ use Symfony\Component\Translation\TranslatorBag;
 #[AsCommand('sw:snippets:push')]
 class PushSnippetsCommand extends Command
 {
-    function __construct(
+    public function __construct(
         #[Autowire(service: 'translation.provider_collection')]
         private readonly TranslationProviderCollection $providers,
         private readonly SnippetService $snippetService,
@@ -75,7 +75,7 @@ class PushSnippetsCommand extends Command
                 'l',
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 'Specify the locales to push.'
-            )
+            ),
         ]);
     }
 
@@ -110,7 +110,6 @@ class PushSnippetsCommand extends Command
     {
         /** @var string[] $locales */
         $locales = $input->getOption('locales');
-        assert(is_array($locales));
 
         if ($locales !== []) {
             $missingLocales = array_diff($locales, $this->relevantLocaleResolver->getAll());
@@ -138,12 +137,12 @@ class PushSnippetsCommand extends Command
         assert(is_array($salesChannelIds));
 
         if ($salesChannelIds === [] || in_array('default', $salesChannelIds, true)) {
-            return [$this->translationProviderResolver->getDefaultProvider()];
+            return [$this->translationProviderResolver->getProvider()];
         }
 
         $providers = [];
         foreach ($salesChannelIds as $salesChannelId) {
-            $providers[] = $this->translationProviderResolver->getSalesChannelProvider($salesChannelId);
+            $providers[] = $this->translationProviderResolver->getProvider($salesChannelId);
         }
 
         return $providers;

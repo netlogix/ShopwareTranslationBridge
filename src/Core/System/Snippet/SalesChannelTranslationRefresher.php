@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Netlogix\ShopwareTranslationBridge\Core\System\Snippet;
 
@@ -16,7 +16,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 readonly class SalesChannelTranslationRefresher implements SalesChannelTranslationRefresherInterface
 {
-    function __construct(
+    public function __construct(
         private TranslationCacheInvalidationInterface $translationCacheInvalidation,
         private EntityRepository $salesChannelDomainRepository,
         #[Autowire(service: Translator::class)]
@@ -33,10 +33,15 @@ readonly class SalesChannelTranslationRefresher implements SalesChannelTranslati
         $criteria = new Criteria();
         $criteria->addFilter(new EqualsAnyFilter('salesChannelId', $salesChannelIds));
         $criteria->addAssociation('language.locale');
+
         try {
-            $this->salesChannelDomainRepository->search($criteria, Context::createCLIContext())->map(
-                $this->warmUpTranslation(...)
-            );
+            $domains = $this->salesChannelDomainRepository->search($criteria, Context::createCLIContext());
+            foreach ($domains as $domain) {
+                if (!$domain instanceof SalesChannelDomainEntity) {
+                    continue;
+                }
+                $this->warmUpTranslation($domain);
+            }
         } finally {
             $this->translator->resetInjection();
         }
@@ -47,7 +52,9 @@ readonly class SalesChannelTranslationRefresher implements SalesChannelTranslati
         $this->translator->injectSettings(
             $domain->getSalesChannelId(),
             $domain->getLanguageId(),
-            $domain->getLanguage()->getLocale()->getCode(),
+            $domain->getLanguage()
+                ->getLocale()
+                ->getCode(),
             Context::createCLIContext()
         );
         $this->translator->getCatalogue();

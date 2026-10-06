@@ -11,6 +11,10 @@
         "error": "Error while updating the translation",
         "errorMissingTranslationProvider": "There is no TranslationProvider."
       }
+    },
+    "nlx-translation-provider-notice": {
+      "title": "Translations are managed externally",
+      "text": "The Translation Bridge plugin is active: storefront translations are now loaded from the translation provider \"{provider}\" and no longer from the snippets maintained here. Changes made in this view may be overridden by the provider."
     }
   }
 }

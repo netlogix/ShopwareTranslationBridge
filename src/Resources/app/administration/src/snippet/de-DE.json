@@ -11,6 +11,10 @@
         "error": "Fehler beim Aktualisieren der Übersetzung",
         "errorMissingTranslationProvider": "Es konnte kein TranslationProvider gefunden werden."
       }
+    },
+    "nlx-translation-provider-notice": {
+      "title": "Übersetzungen werden extern verwaltet",
+      "text": "Das Translation-Bridge-Plugin ist aktiv: Storefront-Übersetzungen werden jetzt aus dem Übersetzungsanbieter \"{provider}\" geladen und nicht mehr aus den hier gepflegten Textbausteinen. Änderungen in dieser Ansicht können vom Anbieter überschrieben werden."
     }
   }
 }

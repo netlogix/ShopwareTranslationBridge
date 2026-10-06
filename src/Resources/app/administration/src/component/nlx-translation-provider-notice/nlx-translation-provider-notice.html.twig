@@ -1,0 +1,10 @@
+{% block nlx_translation_provider_notice %}
+<mt-banner
+    v-if="providerName"
+    class="nlx-translation-provider-notice"
+    variant="info"
+    :title="$tc('nlx-storefront-translation.nlx-translation-provider-notice.title')"
+>
+    {{ $tc('nlx-storefront-translation.nlx-translation-provider-notice.text', { provider: providerName }) }}
+</mt-banner>
+{% endblock %}

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+    <card>
+        <title>Translation Bridge</title>
+        <title lang="de-DE">Translation Bridge</title>
+
+        <component name="nlx-translation-provider-select">
+            <name>keyProvider</name>
+            <label>Default translation provider</label>
+            <label lang="de-DE">Standard-Übersetzungsanbieter</label>
+            <helpText>
+                Symfony Translation provider configured under "framework.translator.providers" in
+                translation.yaml. Select a sales channel above to override the provider for that sales
+                channel only.
+            </helpText>
+            <helpText lang="de-DE">
+                Symfony-Translation-Provider, der unter "framework.translator.providers" in der
+                translation.yaml konfiguriert ist. Wählen Sie oben einen Verkaufskanal aus, um den Provider
+                nur für diesen Verkaufskanal zu überschreiben.
+            </helpText>
+        </component>
+
+        <input-field type="bool">
+            <name>respectTranslationFiles</name>
+            <label>Respect local translation files</label>
+            <label lang="de-DE">Lokale Übersetzungsdateien berücksichtigen</label>
+            <helpText>
+                When enabled, existing local snippet/translation files always take precedence over the
+                configured translation provider.
+            </helpText>
+            <helpText lang="de-DE">
+                Wenn aktiviert, haben vorhandene lokale Snippet-/Übersetzungsdateien immer Vorrang vor dem
+                konfigurierten Übersetzungsanbieter.
+            </helpText>
+            <defaultValue>true</defaultValue>
+        </input-field>
+    </card>
+</config>

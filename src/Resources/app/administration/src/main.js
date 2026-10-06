@@ -1,6 +1,4 @@
-import './module/nlx-translation-update'
-import './overrride/module/sw-settings-cache-index'
-import TranslationApiService from "./service/translationApi.Service";
+import TranslationApiService from './service/translationApi.Service';
 
 const {Application} = Shopware;
 
@@ -9,9 +7,29 @@ Shopware.Component.register(
     () => import('./module/nlx-translation-update')
 );
 
+Shopware.Component.register(
+    'nlx-translation-provider-select',
+    () => import('./component/nlx-translation-provider-select')
+);
+
+Shopware.Component.register(
+    'nlx-translation-provider-notice',
+    () => import('./component/nlx-translation-provider-notice')
+);
+
 Shopware.Component.override(
     'sw-settings-cache-index',
     () => import('./overrride/module/sw-settings-cache-index')
+);
+
+Shopware.Component.override(
+    'sw-settings-snippet-set-list',
+    () => import('./overrride/module/sw-settings-snippet-set-list')
+);
+
+Shopware.Component.override(
+    'sw-settings-snippet-list',
+    () => import('./overrride/module/sw-settings-snippet-list')
 );
 
 Application.addServiceProvider(
